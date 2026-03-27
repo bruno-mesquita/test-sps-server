@@ -1,5 +1,5 @@
 import { Router } from "express";
-import auth from "../middleware/auth";
+import auth, { adminAuth } from "../middleware/auth";
 import * as repo from "../repository";
 import { createUserSchema, updateUserSchema } from "../schemas";
 
@@ -9,7 +9,17 @@ router.get("/users", auth, (req, res) => {
   res.json(repo.findAll());
 });
 
-router.post("/users", auth, (req, res) => {
+router.get("/users/:id", auth, (req, res) => {
+  const id = parseInt(req.params.id as string);
+  const user = repo.findById(id);
+  if (!user) {
+    res.status(404).json({ error: "Usuário não encontrado" });
+    return;
+  }
+  res.json(user);
+});
+
+router.post("/users", adminAuth, (req, res) => {
   const parsed = createUserSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues });
@@ -26,7 +36,7 @@ router.post("/users", auth, (req, res) => {
   res.status(201).json(user);
 });
 
-router.put("/users/:id", auth, (req, res) => {
+router.put("/users/:id", adminAuth, (req, res) => {
   const id = parseInt(req.params.id as string);
   const parsed = updateUserSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -52,7 +62,7 @@ router.put("/users/:id", auth, (req, res) => {
   res.json(user);
 });
 
-router.delete("/users/:id", auth, (req, res) => {
+router.delete("/users/:id", adminAuth, (req, res) => {
   const id = parseInt(req.params.id as string);
   const removed = repo.remove(id);
   if (!removed) {

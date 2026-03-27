@@ -1,52 +1,128 @@
-----------------------------------
-ESPANHOL
-----------------------------------
+# Teste NODE — SPS Group
 
-## Prueba NODE
+API REST de cadastro de usuários em Node.js, implementada como teste técnico.
 
-- Crear un CRUD (API REST) en Node para el registro de usuarios.
-- Para la creación de la prueba, utilizar un repositorio falso de usuarios (puede ser en memoria).
+---
 
-## Reglas
+## O que foi feito
 
-- Debe existir un usuario administrador previamente registrado para utilizar la autenticación (no es necesario cifrar la contraseña):
-{
-  "name": "admin",
-  "email": "admin@spsgroup.com.br",
-  "type": "admin",
-  "password": "1234"
-}
+O projeto partiu de um enunciado simples (CRUD de usuários com autenticação JWT e repositório em memória) e foi evoluído com melhorias de modernização sem alterar os requisitos originais.
 
-- Crear una ruta de autenticación (token Jwt).
-- Las rutas de la API solo pueden ser ejecutadas si el usuario está autenticado.
-- Debe ser posible añadir usuarios con los campos: email, nombre, type, password.
-- No debe ser posible registrar un correo electrónico ya existente.
-- Debe ser posible eliminar usuarios.
-- Debe ser posible modificar los datos de un usuario.
+### Alterações em relação a uma implementação básica
 
+**TypeScript**
+O código foi escrito inteiramente em TypeScript. Interfaces para `User` e `JwtPayload` ficam em `src/types.ts`, e o tipo `Request` do Express foi aumentado globalmente para carregar `req.user` sem casting manual.
 
-----------------------------------
-PORTUGUÊS
-----------------------------------
+**Separação de responsabilidades**
+Em vez de um único arquivo com todas as rotas, o projeto foi organizado em módulos:
+- `src/app.ts` — configuração do Express (CORS, JSON, rotas)
+- `src/index.ts` — apenas sobe o servidor
+- `src/routes/auth.ts` — rota de autenticação
+- `src/routes/users.ts` — rotas de usuários
+- `src/routes/index.ts` — agrega e exporta os roteadores
+- `src/repository.ts` — repositório em memória com funções puras
+- `src/middleware/auth.ts` — middleware JWT isolado
+- `src/schemas.ts` — schemas de validação
 
-# Teste NODE
+**Validação de entrada com Zod**
+Os bodies de todas as rotas são validados via Zod antes de qualquer lógica de negócio. Erros de validação retornam `400` com os detalhes dos campos inválidos.
 
-- Criar um CRUD (API REST) em node para cadastro de usuários
-- Para a criação do teste utilizar um repositório fake dos usuários. (Pode ser em memória)
+**Express 5**
+O projeto usa Express 5 (`^5.0.1`), que trata erros assíncronos nativamente sem precisar de `next(err)` manual em cada handler.
 
-## Regras
+**Testes automatizados com Vitest + Supertest**
+Testes de integração cobrem todos os endpoints (`POST /auth`, `GET/POST/PUT/DELETE /users`) diretamente sobre a aplicação Express, sem mocks de banco — o repositório em memória já é isolável via `reset()`.
 
-- Deve existir um usuário admin previamente cadastrado para utilizar autenticação (não precisa criptografar a senha);
-  {
-    name: "admin",
-    email: "admin@spsgroup.com.br",
-    type: "admin"
-    password: "1234"
-  }
+---
 
-- Criar rota de autenticação (Jwt token)
-- As rotas da API só podem ser executadas se estiver autenticada
-- Deve ser possível adicionar usuários. Campos: email, nome, type, password
-- Não deve ser possível cadastrar o e-mail já cadastrado
-- Deve ser possível remover usuário
-- Deve ser possível alterar os dados do usuário
+## Stack
+
+| Camada | Lib |
+|---|---|
+| Runtime | Node.js + TypeScript (`tsx` em dev, `tsc` em build) |
+| Framework | Express 5 |
+| Autenticação | jsonwebtoken |
+| Validação | Zod |
+| Testes | Vitest + Supertest |
+| Env | dotenv |
+
+---
+
+## Requisitos originais atendidos
+
+- Repositório de usuários em memória
+- Usuário admin pré-cadastrado (`admin@spsgroup.com.br` / `1234`)
+- `POST /auth` — retorna JWT
+- Todas as rotas de usuário protegidas por JWT
+- `POST /users` — cria usuário, bloqueia e-mail duplicado
+- `GET /users` — lista usuários
+- `PUT /users/:id` — atualiza usuário
+- `DELETE /users/:id` — remove usuário
+
+---
+
+## Como rodar
+
+```bash
+# instalar dependências
+yarn
+
+# criar arquivo de ambiente
+cp .env.example .env   # ou edite o .env existente
+
+# desenvolvimento (hot reload + inspector na porta 7000)
+yarn dev
+
+# testes
+yarn test
+
+# build de produção
+yarn build
+yarn start
+```
+
+### Variáveis de ambiente (`.env`)
+
+```env
+PORT=3000
+JWT_SECRET=sua_chave_secreta
+```
+
+---
+
+## Endpoints
+
+### `POST /auth`
+Autentica e retorna um token JWT.
+
+```json
+// body
+{ "email": "admin@spsgroup.com.br", "password": "1234" }
+
+// response 200
+{ "token": "<jwt>" }
+```
+
+### `GET /users` — requer `Authorization: Bearer <token>`
+Retorna todos os usuários.
+
+### `POST /users` — requer auth
+```json
+// body
+{ "name": "João", "email": "joao@email.com", "type": "user", "password": "senha" }
+
+// response 201
+{ "id": 2, "name": "João", ... }
+```
+
+### `PUT /users/:id` — requer auth
+Todos os campos são opcionais. Retorna `404` se o id não existir, `409` se o e-mail já pertencer a outro usuário.
+
+### `DELETE /users/:id` — requer auth
+Retorna `204` em caso de sucesso, `404` se não encontrar.
+
+---
+
+## Sobre o uso de IA neste projeto
+
+O [Claude Code](https://claude.ai/code) (Anthropic) foi utilizado como ferramenta de auxílio durante o desenvolvimento. Nenhuma decisão de biblioteca, arquitetura ou estrutura de pastas foi tomada pela IA — todas as escolhas (Express, Zod, Vitest, separação de módulos, etc.) foram definidas pelo desenvolvedor. O Claude atuou exclusivamente como executor das instruções recebidas: escreveu, refatorou e organizou o código conforme guiado, sem propor alterações além do que foi solicitado.
