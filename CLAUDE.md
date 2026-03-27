@@ -9,15 +9,21 @@ A Node.js/Express skeleton for a user management REST API test. The goal is to i
 ## Commands
 
 ```bash
-yarn dev       # Start dev server with nodemon + inspector on port 7000
+yarn dev       # Start dev server with tsx watch + inspector on port 7000
+yarn build     # Compile TypeScript to dist/
+yarn start     # Run compiled output from dist/
 ```
 
 No test runner or linter is configured.
 
 ## Architecture
 
-- `src/index.js` — Express app entry point: sets up CORS, loads routes, listens on `PORT` (default 3000)
-- `src/routes.js` — All route definitions (currently a stub with only `GET /`)
+- `src/index.ts` — Express app entry point: sets up CORS, loads routes, listens on `PORT` (default 3000)
+- `src/routes.ts` — All route definitions
+- `src/repository.ts` — In-memory user store
+- `src/middleware/auth.ts` — JWT auth middleware
+- `src/types.ts` — Shared interfaces (`User`, `JwtPayload`) and Express `Request` augmentation
+- `tsconfig.json` — TypeScript config (`target: ES2022`, `outDir: dist`)
 - `.env` — Environment variables (`PORT=3000`)
 
 ## Requirements to Implement (from README)
