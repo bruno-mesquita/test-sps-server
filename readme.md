@@ -61,6 +61,16 @@ Testes de integração cobrem todos os endpoints (`POST /auth`, `GET/POST/PUT/DE
 
 ---
 
+## Usuário padrão (admin)
+
+| Campo | Valor |
+|---|---|
+| email | `admin@spsgroup.com.br` |
+| password | `1234` |
+| type | `admin` |
+
+---
+
 ## Como rodar
 
 ```bash
