@@ -14,6 +14,17 @@ export interface User {
   photoId?: number;
 }
 
+export interface Attachment {
+  id: number;
+  userId: number;
+  filename: string;
+  originalName: string;
+  mimetype: string;
+  size: number;
+  url: string;
+  createdAt: string;
+}
+
 export interface JwtPayload {
   id: number;
   email: string;

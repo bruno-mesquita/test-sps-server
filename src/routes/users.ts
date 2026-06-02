@@ -55,7 +55,7 @@ router.post("/users", adminAuth, upload.single("photo"), async (req, res) => {
   res.status(201).json(user);
 });
 
-router.put("/users/:id", adminAuth, (req, res) => {
+router.put("/users/:id", adminAuth, upload.single("photo"), async (req, res) => {
   const id = parseInt(req.params.id as string);
   const parsed = updateUserSchema.safeParse(req.body);
   if (!parsed.success) {
@@ -72,13 +72,19 @@ router.put("/users/:id", adminAuth, (req, res) => {
     }
   }
 
-  const user = repo.update(id, { name, email, type, password });
+  let photoId: number | undefined;
+  if (req.file) {
+    const photo = await processPhoto(req.file);
+    photoId = photo.id;
+  }
+
+  const user = repo.update(id, { name, email, type, password, ...(photoId !== undefined && { photoId }) });
   if (!user) {
     res.status(404).json({ error: "Usuário não encontrado" });
     return;
   }
 
-  res.json(user);
+  res.json(withPhoto(user));
 });
 
 router.delete("/users/:id", adminAuth, (req, res) => {
