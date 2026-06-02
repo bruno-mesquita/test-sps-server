@@ -2,13 +2,24 @@ import { Router } from "express";
 import auth, { adminAuth } from "../middleware/auth";
 import upload from "../middleware/upload";
 import * as repo from "../repository";
+import { findPhotoById } from "../photoRepository";
 import { createUserSchema, updateUserSchema } from "../schemas";
 import { processPhoto } from "../services/photoService";
+import type { User } from "../types";
+
+function withPhoto(user: User) {
+  const photo = user.photoId ? findPhotoById(user.photoId) : undefined;
+  return {
+    ...user,
+    originalUrl: photo?.originalUrl ?? null,
+    previewUrl: photo?.previewUrl ?? null,
+  };
+}
 
 const router = Router();
 
 router.get("/users", auth, (req, res) => {
-  res.json(repo.findAll());
+  res.json(repo.findAll().map(withPhoto));
 });
 
 router.get("/users/:id", auth, (req, res) => {
@@ -18,7 +29,7 @@ router.get("/users/:id", auth, (req, res) => {
     res.status(404).json({ error: "Usuário não encontrado" });
     return;
   }
-  res.json(user);
+  res.json(withPhoto(user));
 });
 
 router.post("/users", adminAuth, upload.single("photo"), async (req, res) => {
