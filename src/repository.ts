@@ -47,6 +47,13 @@ export const update = (id: number, data: UpdateInput): User | null => {
   return users[index];
 };
 
+export const clearPhoto = (id: number): User | null => {
+  const index = users.findIndex((u) => u.id === id);
+  if (index === -1) return null;
+  delete users[index].photoId;
+  return users[index];
+};
+
 export const remove = (id: number): boolean => {
   const index = users.findIndex((u) => u.id === id);
   if (index === -1) return false;

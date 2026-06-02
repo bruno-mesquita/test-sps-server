@@ -87,6 +87,16 @@ router.put("/users/:id", adminAuth, upload.single("photo"), async (req, res) => 
   res.json(withPhoto(user));
 });
 
+router.delete("/users/:id/photo", adminAuth, (req, res) => {
+  const id = parseInt(req.params.id as string);
+  const user = repo.clearPhoto(id);
+  if (!user) {
+    res.status(404).json({ error: "Usuário não encontrado" });
+    return;
+  }
+  res.json(withPhoto(user));
+});
+
 router.delete("/users/:id", adminAuth, (req, res) => {
   const id = parseInt(req.params.id as string);
   const removed = repo.remove(id);
