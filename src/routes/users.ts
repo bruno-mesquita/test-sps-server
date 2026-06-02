@@ -1,7 +1,9 @@
 import { Router } from "express";
 import auth, { adminAuth } from "../middleware/auth";
+import upload from "../middleware/upload";
 import * as repo from "../repository";
 import { createUserSchema, updateUserSchema } from "../schemas";
+import { processPhoto } from "../services/photoService";
 
 const router = Router();
 
@@ -19,7 +21,7 @@ router.get("/users/:id", auth, (req, res) => {
   res.json(user);
 });
 
-router.post("/users", adminAuth, (req, res) => {
+router.post("/users", adminAuth, upload.single("photo"), async (req, res) => {
   const parsed = createUserSchema.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.issues });
@@ -32,7 +34,13 @@ router.post("/users", adminAuth, (req, res) => {
     return;
   }
 
-  const user = repo.create({ name, email, type, password });
+  let photoId: number | undefined;
+  if (req.file) {
+    const photo = await processPhoto(req.file);
+    photoId = photo.id;
+  }
+
+  const user = repo.create({ name, email, type, password, photoId });
   res.status(201).json(user);
 });
 
