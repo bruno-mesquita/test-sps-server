@@ -1,9 +1,11 @@
+import bcrypt from "bcrypt";
 import { photoRepository } from "../repositories/photoRepository";
 import { userRepository } from "../repositories/UserRepository";
 import { User } from "../types";
 import { photoService } from "./photoService";
 
-type UserWithPhoto = Omit<User, "photoId"> & { originalUrl: string | null; previewUrl: string | null };
+type SafeUser = Omit<User, "password" | "photoId">;
+type UserWithPhoto = SafeUser & { originalUrl: string | null; previewUrl: string | null };
 type UpdateResult =
   | { ok: true; user: UserWithPhoto }
   | { ok: false; reason: "not_found" | "conflict" };
@@ -13,8 +15,9 @@ export class UserService {
     const photo = user.photoId
       ? await photoRepository.findPhotoById(user.photoId)
       : undefined;
+    const { password, photoId, ...safe } = user;
     return {
-      ...user,
+      ...safe,
       originalUrl: photo?.originalUrl ?? null,
       previewUrl: photo?.previewUrl ?? null,
     };
@@ -37,7 +40,7 @@ export class UserService {
     type,
     password,
     file,
-  }: Omit<User, "id"> & { file?: Express.Multer.File }): Promise<User | null> {
+  }: Omit<User, "id"> & { file?: Express.Multer.File }): Promise<SafeUser | null> {
     const existing = await userRepository.findByEmail(email);
     if (existing) return null;
 
@@ -47,7 +50,10 @@ export class UserService {
       photoId = photo.id;
     }
 
-    return userRepository.create({ name, email, type, password, photoId });
+    const hashed = await bcrypt.hash(password, 10);
+    const user = await userRepository.create({ name, email, type, password: hashed, photoId });
+    const { password: _pw, photoId: _pid, ...safe } = user;
+    return safe;
   }
 
   async update(
@@ -71,11 +77,13 @@ export class UserService {
       photoId = photo.id;
     }
 
+    const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
+
     const user = await userRepository.update(id, {
       name,
       email,
       type,
-      password,
+      ...(hashedPassword !== undefined && { password: hashedPassword }),
       ...(photoId !== undefined && { photoId }),
     });
     if (!user) return { ok: false, reason: "not_found" };

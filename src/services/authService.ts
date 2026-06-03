@@ -1,10 +1,11 @@
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { userRepository } from "../repositories/UserRepository";
 
 export class AuthService {
   async login(email: string, password: string): Promise<string | null> {
     const user = await userRepository.findByEmail(email);
-    if (!user || user.password !== password) return null;
+    if (!user || !(await bcrypt.compare(password, user.password))) return null;
 
     return jwt.sign(
       { id: user.id, email: user.email, type: user.type },

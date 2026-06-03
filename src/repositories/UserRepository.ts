@@ -1,9 +1,12 @@
+import bcrypt from "bcrypt";
 import type { User } from "../types";
 
 type CreateInput = Omit<User, "id">;
 type UpdateInput = Partial<CreateInput>;
 
 let nextId = 2;
+
+const SEED_PASSWORD_HASH = bcrypt.hashSync("1234", 10);
 
 export class UserRepository {
   users: User[] = [
@@ -12,7 +15,7 @@ export class UserRepository {
       name: "admin",
       email: "admin@spsgroup.com.br",
       type: "admin",
-      password: "1234",
+      password: SEED_PASSWORD_HASH,
     },
   ];
 
@@ -22,7 +25,7 @@ export class UserRepository {
       name: "admin",
       email: "admin@spsgroup.com.br",
       type: "admin",
-      password: "1234",
+      password: SEED_PASSWORD_HASH,
     });
     nextId = 2;
   }
