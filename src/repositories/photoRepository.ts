@@ -16,6 +16,11 @@ class PhotoRepository {
   async findPhotoById(id: number) {
     return this.photos.find((p) => p.id === id);
   }
+
+  reset() {
+    this.photos = [];
+    nextId = 1;
+  }
 }
 
 export const photoRepository = new PhotoRepository();

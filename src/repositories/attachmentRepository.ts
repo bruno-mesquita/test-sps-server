@@ -31,6 +31,11 @@ class AttachmentRepository {
     this.attachments.splice(idx, 1);
     return true;
   }
+
+  reset() {
+    this.attachments = [];
+    nextId = 1;
+  }
 }
 
 
