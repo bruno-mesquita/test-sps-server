@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import app from "../app";
-import * as repo from "../repository";
+import * as repo from "../repositories/UserRepository";
 
 const ADMIN = { email: "admin@spsgroup.com.br", password: "1234" };
 
@@ -11,7 +11,7 @@ async function getToken(credentials = ADMIN): Promise<string> {
 }
 
 beforeEach(() => {
-  repo.reset();
+  repo.userRepository.reset();
 });
 
 // ---------------------------------------------------------------------------
