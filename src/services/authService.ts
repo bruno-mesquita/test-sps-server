@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { userRepository } from "../repositories/UserRepository";
+import { repositories } from "../repositories/factory";
 import type { IUserRepository } from "../repositories/interfaces";
 
 export class AuthService {
@@ -18,4 +18,4 @@ export class AuthService {
   }
 }
 
-export const authService = new AuthService(userRepository);
+export const authService = new AuthService(repositories.userRepo);
