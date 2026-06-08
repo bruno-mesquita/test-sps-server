@@ -2,22 +2,18 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { UserRepository } from "../repositories/UserRepository";
 import { AttachmentRepository } from "../repositories/attachmentRepository";
 import { AttachmentService } from "../services/attachmentService";
+import type { StoredFile } from "../services/storageService";
 
 const NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000";
 const OTHER_USER_ID = "00000000-0000-0000-0000-000000000002";
 
-const FAKE_FILE = {
-  fieldname: "file",
-  originalname: "documento.pdf",
-  encoding: "7bit",
+const FAKE_FILE: StoredFile = {
+  filename: "abc123.pdf",
+  originalName: "documento.pdf",
   mimetype: "application/pdf",
   size: 2048,
-  filename: "abc123.pdf",
   path: "uploads/abc123.pdf",
-  destination: "uploads",
-  buffer: Buffer.from(""),
-  stream: null as never,
-} satisfies Express.Multer.File;
+};
 
 let attachmentService: AttachmentService;
 let adminId: string;
@@ -44,7 +40,7 @@ describe("AttachmentService.createMany", () => {
   });
 
   it("cria múltiplos attachments de uma vez", async () => {
-    const files = [FAKE_FILE, { ...FAKE_FILE, filename: "xyz.pdf", originalname: "outro.pdf" }];
+    const files = [FAKE_FILE, { ...FAKE_FILE, filename: "xyz.pdf", originalName: "outro.pdf" }];
     const result = await attachmentService.createMany(adminId, files);
     expect(result).toHaveLength(2);
   });

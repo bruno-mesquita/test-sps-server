@@ -1,6 +1,5 @@
 import { Router } from "express";
 import auth, { adminAuth } from "../middleware/auth";
-import upload from "../middleware/upload";
 import { userController } from "../controllers/UserController";
 
 const router = Router();
@@ -113,7 +112,7 @@ router.get("/users/:id", auth, (req, res) => userController.getById(req, res));
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post("/users", adminAuth, upload.single("photo"), (req, res) => userController.create(req, res));
+router.post("/users", adminAuth, (req, res) => userController.create(req, res));
 
 /**
  * @swagger
@@ -166,7 +165,7 @@ router.post("/users", adminAuth, upload.single("photo"), (req, res) => userContr
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.put("/users/:id", adminAuth, upload.single("photo"), (req, res) => userController.update(req, res));
+router.put("/users/:id", adminAuth, (req, res) => userController.update(req, res));
 
 /**
  * @swagger

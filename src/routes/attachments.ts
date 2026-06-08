@@ -1,6 +1,5 @@
 import { Router } from "express";
 import auth from "../middleware/auth";
-import uploadAny from "../middleware/uploadAny";
 import { attachmentController } from "../controllers/AttachmentController";
 
 const router = Router();
@@ -47,9 +46,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post("/users/:id/attachments", auth, uploadAny.array("files", 10), (req, res) =>
-  attachmentController.upload(req, res),
-);
+router.post("/users/:id/attachments", auth, (req, res) => attachmentController.upload(req, res));
 
 /**
  * @swagger

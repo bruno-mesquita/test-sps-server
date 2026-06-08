@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import { RepositoryFactory } from "../repositories/factory";
 import type { IUserRepository, IAttachmentRepository, IPhotoRepository } from "../repositories/interfaces";
 import type { IPhotoService } from "./interfaces";
+import type { StoredFile } from "./storageService";
 import { photoService } from "./photoService";
 import { Attachment, User } from "../types";
 
@@ -62,7 +63,7 @@ export class UserService {
     type,
     password,
     file,
-  }: Omit<User, "id"> & { file?: Express.Multer.File }): Promise<SafeUser | null> {
+  }: Omit<User, "id"> & { file?: StoredFile }): Promise<SafeUser | null> {
     const existing = await this.userRepo.findByEmail(email);
     if (existing) return null;
 
@@ -86,7 +87,7 @@ export class UserService {
       type,
       password,
       file,
-    }: Partial<Omit<User, "id">> & { file?: Express.Multer.File },
+    }: Partial<Omit<User, "id">> & { file?: StoredFile },
   ): Promise<UpdateResult> {
     if (email) {
       const existing = await this.userRepo.findByEmail(email);

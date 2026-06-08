@@ -2,6 +2,7 @@ import fs from "fs";
 import path from "path";
 import { RepositoryFactory } from "../repositories/factory";
 import type { IUserRepository, IAttachmentRepository } from "../repositories/interfaces";
+import type { StoredFile } from "./storageService";
 import type { Attachment } from "../types";
 
 const BASE_URL = () => `http://localhost:${process.env.PORT ?? 3000}`;
@@ -14,7 +15,7 @@ export class AttachmentService {
 
   async createMany(
     userId: string,
-    files: Express.Multer.File[],
+    files: StoredFile[],
   ): Promise<Attachment[] | null> {
     const user = await this.userRepo.findById(userId);
     if (!user) return null;
@@ -24,7 +25,7 @@ export class AttachmentService {
         this.attachmentRepo.createAttachment({
           userId,
           filename: file.filename,
-          originalName: file.originalname,
+          originalName: file.originalName,
           mimetype: file.mimetype,
           size: file.size,
           url: `${BASE_URL()}/uploads/${file.filename}`,

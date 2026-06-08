@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
+import type { UploadedFile } from "express-fileupload";
 import { attachmentService } from "../services/attachmentService";
+import { storageService } from "../services/storageService";
 
 function canActOnUser(req: Request, userId: string): boolean {
   return req.user!.id === userId || req.user!.type === "admin";
@@ -10,8 +12,11 @@ export class AttachmentController {
     const userId = req.params.id as string;
     if (!canActOnUser(req, userId)) return res.status(403).json({ error: "Acesso negado" });
 
-    const files = req.files as Express.Multer.File[];
-    if (!files || files.length === 0) return res.status(400).json({ error: "Nenhum arquivo enviado" });
+    const raw = req.files?.files;
+    const uploadedFiles = raw ? (Array.isArray(raw) ? raw : [raw]) as UploadedFile[] : [];
+    if (uploadedFiles.length === 0) return res.status(400).json({ error: "Nenhum arquivo enviado" });
+
+    const files = await storageService.saveMany(uploadedFiles);
 
     const attachments = await attachmentService.createMany(userId, files);
     if (!attachments) return res.status(404).json({ error: "Usuário não encontrado" });

@@ -4,12 +4,13 @@ import fs from "fs/promises";
 import { photoRepository } from "../repositories/photoRepository";
 import type { IPhotoRepository } from "../repositories/interfaces";
 import type { IPhotoService } from "./interfaces";
+import type { StoredFile } from "./storageService";
 import type { Photo } from "../types";
 
 export class PhotoService implements IPhotoService {
   constructor(private photoRepo: IPhotoRepository) {}
 
-  async processPhoto(file: Express.Multer.File): Promise<Photo> {
+  async processPhoto(file: StoredFile): Promise<Photo> {
     const ext = path.extname(file.filename);
     const base = path.basename(file.filename, ext);
 
@@ -30,7 +31,7 @@ export class PhotoService implements IPhotoService {
       process.env.BASE_URL ?? `http://localhost:${process.env.PORT ?? 3000}`;
 
     return this.photoRepo.createPhoto({
-      filename: file.originalname,
+      filename: file.originalName,
       originalUrl: `${baseUrl}/uploads/${originalName}`,
       previewUrl: `${baseUrl}/uploads/${previewName}`,
     });
