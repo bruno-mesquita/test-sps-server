@@ -1,11 +1,13 @@
 import bcrypt from "bcrypt";
+import { attachmentRepository } from "../repositories/attachmentRepository";
 import { photoRepository } from "../repositories/photoRepository";
 import { userRepository } from "../repositories/UserRepository";
-import { User } from "../types";
+import { Attachment, User } from "../types";
 import { photoService } from "./photoService";
 
 type SafeUser = Omit<User, "password" | "photoId">;
 type UserWithPhoto = SafeUser & { originalUrl: string | null; previewUrl: string | null };
+type UserWithPhotoAndAttachments = UserWithPhoto & { attachments: Attachment[] };
 type UpdateResult =
   | { ok: true; user: UserWithPhoto }
   | { ok: false; reason: "not_found" | "conflict" };
@@ -28,10 +30,14 @@ export class UserService {
     return Promise.all(users.map((u) => this.withPhoto(u)));
   }
 
-  async getById(id: number): Promise<UserWithPhoto | null> {
+  async getById(id: number): Promise<UserWithPhotoAndAttachments | null> {
     const user = await userRepository.findById(id);
     if (!user) return null;
-    return this.withPhoto(user);
+    const [withPhoto, attachments] = await Promise.all([
+      this.withPhoto(user),
+      attachmentRepository.findByUserId(id),
+    ]);
+    return { ...withPhoto, attachments };
   }
 
   async create({
