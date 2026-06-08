@@ -7,6 +7,7 @@ import { photoService } from "./photoService";
 
 type SafeUser = Omit<User, "password" | "photoId">;
 type UserWithPhoto = SafeUser & { originalUrl: string | null; previewUrl: string | null };
+type UserWithPhotoAndCount = UserWithPhoto & { attachmentCount: number };
 type UserWithPhotoAndAttachments = UserWithPhoto & { attachments: Attachment[] };
 type UpdateResult =
   | { ok: true; user: UserWithPhoto }
@@ -25,9 +26,17 @@ export class UserService {
     };
   }
 
-  async list(): Promise<UserWithPhoto[]> {
+  async list(): Promise<UserWithPhotoAndCount[]> {
     const users = await userRepository.findAll();
-    return Promise.all(users.map((u) => this.withPhoto(u)));
+    return Promise.all(
+      users.map(async (u) => {
+        const [withPhoto, attachmentCount] = await Promise.all([
+          this.withPhoto(u),
+          attachmentRepository.getCountByUserId(u.id),
+        ]);
+        return { ...withPhoto, attachmentCount };
+      }),
+    );
   }
 
   async getById(id: number): Promise<UserWithPhotoAndAttachments | null> {

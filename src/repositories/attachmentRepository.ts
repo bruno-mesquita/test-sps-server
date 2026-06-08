@@ -25,6 +25,10 @@ class AttachmentRepository {
     return this.attachments.find((a) => a.id === id);
   }
 
+  async getCountByUserId(userId: number) {
+    return this.attachments.filter((a) => a.userId === userId).length;
+  }
+
   async removeAttachment(id: number) {
     const idx = this.attachments.findIndex((a) => a.id === id);
     if (idx === -1) return false;
