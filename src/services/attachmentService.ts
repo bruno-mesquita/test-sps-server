@@ -1,22 +1,28 @@
 import fs from "fs";
 import path from "path";
-import { attachmentRepository } from "../repositories/attachmentRepository";
 import { userRepository } from "../repositories/UserRepository";
+import { attachmentRepository } from "../repositories/attachmentRepository";
+import type { IUserRepository, IAttachmentRepository } from "../repositories/interfaces";
 import type { Attachment } from "../types";
 
 const BASE_URL = () => `http://localhost:${process.env.PORT ?? 3000}`;
 
 export class AttachmentService {
+  constructor(
+    private userRepo: IUserRepository,
+    private attachmentRepo: IAttachmentRepository,
+  ) {}
+
   async createMany(
     userId: number,
     files: Express.Multer.File[],
   ): Promise<Attachment[] | null> {
-    const user = await userRepository.findById(userId);
+    const user = await this.userRepo.findById(userId);
     if (!user) return null;
 
     return Promise.all(
       files.map((file) =>
-        attachmentRepository.createAttachment({
+        this.attachmentRepo.createAttachment({
           userId,
           filename: file.filename,
           originalName: file.originalname,
@@ -29,23 +35,23 @@ export class AttachmentService {
   }
 
   async listByUser(userId: number): Promise<Attachment[] | null> {
-    const user = await userRepository.findById(userId);
+    const user = await this.userRepo.findById(userId);
     if (!user) return null;
-    return attachmentRepository.findByUserId(userId);
+    return this.attachmentRepo.findByUserId(userId);
   }
 
   async remove(
     userId: number,
     attachmentId: number,
   ): Promise<"ok" | "not_found"> {
-    const attachment = await attachmentRepository.findById(attachmentId);
+    const attachment = await this.attachmentRepo.findById(attachmentId);
     if (!attachment || attachment.userId !== userId) return "not_found";
 
     const filePath = path.resolve("uploads", attachment.filename);
     fs.unlink(filePath, () => {});
-    await attachmentRepository.removeAttachment(attachmentId);
+    await this.attachmentRepo.removeAttachment(attachmentId);
     return "ok";
   }
 }
 
-export const attachmentService = new AttachmentService();
+export const attachmentService = new AttachmentService(userRepository, attachmentRepository);

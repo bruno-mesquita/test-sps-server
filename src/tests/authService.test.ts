@@ -1,10 +1,12 @@
 import "dotenv/config";
 import { describe, it, expect, beforeEach } from "vitest";
-import { authService } from "../services/authService";
-import { userRepository } from "../repositories/UserRepository";
+import { UserRepository } from "../repositories/UserRepository";
+import { AuthService } from "../services/authService";
 
-beforeEach(async () => {
-  await userRepository.reset();
+let authService: AuthService;
+
+beforeEach(() => {
+  authService = new AuthService(new UserRepository());
 });
 
 describe("AuthService.login", () => {

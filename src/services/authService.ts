@@ -1,10 +1,13 @@
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { userRepository } from "../repositories/UserRepository";
+import type { IUserRepository } from "../repositories/interfaces";
 
 export class AuthService {
+  constructor(private userRepo: IUserRepository) {}
+
   async login(email: string, password: string): Promise<string | null> {
-    const user = await userRepository.findByEmail(email);
+    const user = await this.userRepo.findByEmail(email);
     if (!user || !(await bcrypt.compare(password, user.password))) return null;
 
     return jwt.sign(
@@ -15,4 +18,4 @@ export class AuthService {
   }
 }
 
-export const authService = new AuthService();
+export const authService = new AuthService(userRepository);

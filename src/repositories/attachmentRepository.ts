@@ -1,15 +1,15 @@
 import type { Attachment } from "../types";
+import type { IAttachmentRepository } from "./interfaces";
 
 type CreateInput = Omit<Attachment, "id" | "createdAt">;
 
-let nextId = 1;
-
-class AttachmentRepository {
+export class AttachmentRepository implements IAttachmentRepository {
+  private nextId = 1;
   attachments: Attachment[] = [];
 
   async createAttachment(data: CreateInput) {
     const attachment: Attachment = {
-      id: nextId++,
+      id: this.nextId++,
       createdAt: new Date().toISOString(),
       ...data,
     };
@@ -38,9 +38,8 @@ class AttachmentRepository {
 
   reset() {
     this.attachments = [];
-    nextId = 1;
+    this.nextId = 1;
   }
 }
-
 
 export const attachmentRepository = new AttachmentRepository();

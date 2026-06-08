@@ -1,33 +1,27 @@
 import bcrypt from "bcrypt";
 import type { User } from "../types";
+import type { IUserRepository } from "./interfaces";
 
 type CreateInput = Omit<User, "id">;
 type UpdateInput = Partial<CreateInput>;
 
-let nextId = 2;
-
 const SEED_PASSWORD_HASH = bcrypt.hashSync("1234", 10);
 
-export class UserRepository {
-  users: User[] = [
-    {
-      id: 1,
-      name: "admin",
-      email: "admin@spsgroup.com.br",
-      type: "admin",
-      password: SEED_PASSWORD_HASH,
-    },
-  ];
+const SEED_USER: User = {
+  id: 1,
+  name: "admin",
+  email: "admin@spsgroup.com.br",
+  type: "admin",
+  password: SEED_PASSWORD_HASH,
+};
+
+export class UserRepository implements IUserRepository {
+  private nextId = 2;
+  users: User[] = [{ ...SEED_USER }];
 
   async reset(): Promise<void> {
-    this.users.splice(0, this.users.length, {
-      id: 1,
-      name: "admin",
-      email: "admin@spsgroup.com.br",
-      type: "admin",
-      password: SEED_PASSWORD_HASH,
-    });
-    nextId = 2;
+    this.users = [{ ...SEED_USER }];
+    this.nextId = 2;
   }
 
   async findAll() {
@@ -43,7 +37,7 @@ export class UserRepository {
   }
 
   async create(data: CreateInput) {
-    const user: User = { id: nextId++, ...data };
+    const user: User = { id: this.nextId++, ...data };
     this.users.push(user);
     return user;
   }

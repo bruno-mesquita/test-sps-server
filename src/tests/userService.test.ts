@@ -1,27 +1,31 @@
+import "dotenv/config";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { userRepository } from "../repositories/UserRepository";
+import { UserRepository } from "../repositories/UserRepository";
+import { AttachmentRepository } from "../repositories/attachmentRepository";
+import { UserService } from "../services/userService";
+import type { IPhotoRepository } from "../repositories/interfaces";
+import type { IPhotoService } from "../services/interfaces";
 
-vi.mock("../repositories/photoRepository", () => ({
-  photoRepository: {
-    findPhotoById: vi.fn().mockResolvedValue(undefined),
-  },
-}));
+const mockPhotoRepo: IPhotoRepository = {
+  createPhoto: vi.fn(),
+  findPhotoById: vi.fn().mockResolvedValue(undefined),
+};
 
-vi.mock("../services/photoService", () => ({
-  photoService: {
-    processPhoto: vi.fn().mockResolvedValue({
-      id: 99,
-      filename: "img.jpg",
-      originalUrl: "http://localhost/uploads/original.jpg",
-      previewUrl: "http://localhost/uploads/preview.jpg",
-    }),
-  },
-}));
+const mockPhotoService: IPhotoService = {
+  processPhoto: vi.fn().mockResolvedValue({
+    id: 99,
+    filename: "img.jpg",
+    originalUrl: "http://localhost/uploads/original.jpg",
+    previewUrl: "http://localhost/uploads/preview.jpg",
+  }),
+};
 
-import { userService } from "../services/userService";
+let userRepo: UserRepository;
+let userService: UserService;
 
-beforeEach(async () => {
-  await userRepository.reset();
+beforeEach(() => {
+  userRepo = new UserRepository();
+  userService = new UserService(userRepo, new AttachmentRepository(), mockPhotoRepo, mockPhotoService);
 });
 
 describe("UserService.list", () => {
@@ -68,7 +72,7 @@ describe("UserService.create", () => {
 
   it("hash a senha (não armazena plain text)", async () => {
     await userService.create({ name: "X", email: "x@test.com", type: "user", password: "secret" });
-    const raw = await userRepository.findByEmail("x@test.com");
+    const raw = await userRepo.findByEmail("x@test.com");
     expect(raw?.password).not.toBe("secret");
     expect(raw?.password).toMatch(/^\$2[aby]\$/);
   });

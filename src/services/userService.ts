@@ -1,9 +1,11 @@
 import bcrypt from "bcrypt";
+import { userRepository } from "../repositories/UserRepository";
 import { attachmentRepository } from "../repositories/attachmentRepository";
 import { photoRepository } from "../repositories/photoRepository";
-import { userRepository } from "../repositories/UserRepository";
-import { Attachment, User } from "../types";
+import type { IUserRepository, IAttachmentRepository, IPhotoRepository } from "../repositories/interfaces";
+import type { IPhotoService } from "./interfaces";
 import { photoService } from "./photoService";
+import { Attachment, User } from "../types";
 
 type SafeUser = Omit<User, "password" | "photoId">;
 type UserWithPhoto = SafeUser & { originalUrl: string | null; previewUrl: string | null };
@@ -14,9 +16,16 @@ type UpdateResult =
   | { ok: false; reason: "not_found" | "conflict" };
 
 export class UserService {
+  constructor(
+    private userRepo: IUserRepository,
+    private attachmentRepo: IAttachmentRepository,
+    private photoRepo: IPhotoRepository,
+    private photoSvc: IPhotoService,
+  ) {}
+
   async withPhoto(user: User): Promise<UserWithPhoto> {
     const photo = user.photoId
-      ? await photoRepository.findPhotoById(user.photoId)
+      ? await this.photoRepo.findPhotoById(user.photoId)
       : undefined;
     const { password, photoId, ...safe } = user;
     return {
@@ -27,12 +36,12 @@ export class UserService {
   }
 
   async list(): Promise<UserWithPhotoAndCount[]> {
-    const users = await userRepository.findAll();
+    const users = await this.userRepo.findAll();
     return Promise.all(
       users.map(async (u) => {
         const [withPhoto, attachmentCount] = await Promise.all([
           this.withPhoto(u),
-          attachmentRepository.getCountByUserId(u.id),
+          this.attachmentRepo.getCountByUserId(u.id),
         ]);
         return { ...withPhoto, attachmentCount };
       }),
@@ -40,11 +49,11 @@ export class UserService {
   }
 
   async getById(id: number): Promise<UserWithPhotoAndAttachments | null> {
-    const user = await userRepository.findById(id);
+    const user = await this.userRepo.findById(id);
     if (!user) return null;
     const [withPhoto, attachments] = await Promise.all([
       this.withPhoto(user),
-      attachmentRepository.findByUserId(id),
+      this.attachmentRepo.findByUserId(id),
     ]);
     return { ...withPhoto, attachments };
   }
@@ -56,17 +65,17 @@ export class UserService {
     password,
     file,
   }: Omit<User, "id"> & { file?: Express.Multer.File }): Promise<SafeUser | null> {
-    const existing = await userRepository.findByEmail(email);
+    const existing = await this.userRepo.findByEmail(email);
     if (existing) return null;
 
     let photoId: number | undefined;
     if (file) {
-      const photo = await photoService.processPhoto(file);
+      const photo = await this.photoSvc.processPhoto(file);
       photoId = photo.id;
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = await userRepository.create({ name, email, type, password: hashed, photoId });
+    const user = await this.userRepo.create({ name, email, type, password: hashed, photoId });
     const { password: _pw, photoId: _pid, ...safe } = user;
     return safe;
   }
@@ -82,19 +91,19 @@ export class UserService {
     }: Partial<Omit<User, "id">> & { file?: Express.Multer.File },
   ): Promise<UpdateResult> {
     if (email) {
-      const existing = await userRepository.findByEmail(email);
+      const existing = await this.userRepo.findByEmail(email);
       if (existing && existing.id !== id) return { ok: false, reason: "conflict" };
     }
 
     let photoId: number | undefined;
     if (file) {
-      const photo = await photoService.processPhoto(file);
+      const photo = await this.photoSvc.processPhoto(file);
       photoId = photo.id;
     }
 
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
-    const user = await userRepository.update(id, {
+    const user = await this.userRepo.update(id, {
       name,
       email,
       type,
@@ -106,14 +115,19 @@ export class UserService {
   }
 
   async delete(id: number): Promise<boolean> {
-    return userRepository.remove(id);
+    return this.userRepo.remove(id);
   }
 
   async clearPhoto(id: number): Promise<UserWithPhoto | null> {
-    const user = await userRepository.clearPhoto(id);
+    const user = await this.userRepo.clearPhoto(id);
     if (!user) return null;
     return this.withPhoto(user);
   }
 }
 
-export const userService = new UserService();
+export const userService = new UserService(
+  userRepository,
+  attachmentRepository,
+  photoRepository,
+  photoService,
+);

@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { attachmentService } from "../services/attachmentService";
-import { attachmentRepository } from "../repositories/attachmentRepository";
-import { userRepository } from "../repositories/UserRepository";
+import { UserRepository } from "../repositories/UserRepository";
+import { AttachmentRepository } from "../repositories/attachmentRepository";
+import { AttachmentService } from "../services/attachmentService";
 
 const FAKE_FILE = {
   fieldname: "file",
@@ -16,9 +16,10 @@ const FAKE_FILE = {
   stream: null as never,
 } satisfies Express.Multer.File;
 
-beforeEach(async () => {
-  await userRepository.reset();
-  attachmentRepository.reset();
+let attachmentService: AttachmentService;
+
+beforeEach(() => {
+  attachmentService = new AttachmentService(new UserRepository(), new AttachmentRepository());
 });
 
 describe("AttachmentService.createMany", () => {
