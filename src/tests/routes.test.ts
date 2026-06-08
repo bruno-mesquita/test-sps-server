@@ -11,9 +11,18 @@ async function getToken(credentials = ADMIN): Promise<string> {
   return res.body.token as string;
 }
 
-beforeEach(() => {
+function decodeId(token: string): string {
+  const payload = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()) as { id: string };
+  return payload.id;
+}
+
+let adminId: string;
+
+beforeEach(async () => {
   repo.userRepository.reset();
   attachmentRepo.attachmentRepository.reset();
+  const token = await getToken();
+  adminId = decodeId(token);
 });
 
 // ---------------------------------------------------------------------------
@@ -82,23 +91,23 @@ describe("GET /users/:id", () => {
   it("retorna usuário pelo id com token válido", async () => {
     const token = await getToken();
     const res = await request(app)
-      .get("/users/1")
+      .get(`/users/${adminId}`)
       .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: 1, email: "admin@spsgroup.com.br" });
+    expect(res.body).toMatchObject({ id: adminId, email: "admin@spsgroup.com.br" });
     expect(res.body).not.toHaveProperty("password");
   });
 
   it("retorna 404 para id inexistente", async () => {
     const token = await getToken();
     const res = await request(app)
-      .get("/users/9999")
+      .get("/users/00000000-0000-0000-0000-000000000000")
       .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(404);
   });
 
   it("retorna 401 sem token", async () => {
-    const res = await request(app).get("/users/1");
+    const res = await request(app).get(`/users/${adminId}`);
     expect(res.status).toBe(401);
   });
 });
@@ -164,18 +173,18 @@ describe("PUT /users/:id", () => {
   it("atualiza usuário existente", async () => {
     const token = await getToken();
     const res = await request(app)
-      .put("/users/1")
+      .put(`/users/${adminId}`)
       .set("Authorization", `Bearer ${token}`)
       .send({ name: "Admin Atualizado" });
     expect(res.status).toBe(200);
     expect(res.body.name).toBe("Admin Atualizado");
-    expect(res.body.id).toBe(1);
+    expect(res.body.id).toBe(adminId);
   });
 
   it("retorna 404 para id inexistente", async () => {
     const token = await getToken();
     const res = await request(app)
-      .put("/users/9999")
+      .put("/users/00000000-0000-0000-0000-000000000000")
       .set("Authorization", `Bearer ${token}`)
       .send({ name: "Ninguém" });
     expect(res.status).toBe(404);
@@ -183,22 +192,20 @@ describe("PUT /users/:id", () => {
 
   it("retorna 409 ao trocar email para um já cadastrado", async () => {
     const token = await getToken();
-    // cria segundo usuário
     await request(app)
       .post("/users")
       .set("Authorization", `Bearer ${token}`)
       .send({ name: "Maria", email: "maria@test.com", type: "user", password: "abc" });
 
-    // tenta atualizar admin com o email da Maria
     const res = await request(app)
-      .put("/users/1")
+      .put(`/users/${adminId}`)
       .set("Authorization", `Bearer ${token}`)
       .send({ email: "maria@test.com" });
     expect(res.status).toBe(409);
   });
 
   it("retorna 401 sem token", async () => {
-    const res = await request(app).put("/users/1").send({ name: "X" });
+    const res = await request(app).put(`/users/${adminId}`).send({ name: "X" });
     expect(res.status).toBe(401);
   });
 });
@@ -209,7 +216,6 @@ describe("PUT /users/:id", () => {
 describe("DELETE /users/:id", () => {
   it("remove usuário existente e retorna 204", async () => {
     const token = await getToken();
-    // cria um usuário para deletar
     const created = await request(app)
       .post("/users")
       .set("Authorization", `Bearer ${token}`)
@@ -224,13 +230,13 @@ describe("DELETE /users/:id", () => {
   it("retorna 404 para id inexistente", async () => {
     const token = await getToken();
     const res = await request(app)
-      .delete("/users/9999")
+      .delete("/users/00000000-0000-0000-0000-000000000000")
       .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(404);
   });
 
   it("retorna 401 sem token", async () => {
-    const res = await request(app).delete("/users/1");
+    const res = await request(app).delete(`/users/${adminId}`);
     expect(res.status).toBe(401);
   });
 
@@ -248,7 +254,7 @@ describe("DELETE /users/:id", () => {
     const list = await request(app)
       .get("/users")
       .set("Authorization", `Bearer ${token}`);
-    const ids = (list.body as Array<{ id: number }>).map((u) => u.id);
+    const ids = (list.body as Array<{ id: string }>).map((u) => u.id);
     expect(ids).not.toContain(created.body.id);
   });
 });
@@ -260,23 +266,23 @@ describe("DELETE /users/:id/photo", () => {
   it("limpa foto do usuário e retorna 200", async () => {
     const token = await getToken();
     const res = await request(app)
-      .delete("/users/1/photo")
+      .delete(`/users/${adminId}/photo`)
       .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(200);
-    expect(res.body).toMatchObject({ id: 1 });
+    expect(res.body).toMatchObject({ id: adminId });
     expect(res.body.photoId).toBeUndefined();
   });
 
   it("retorna 404 para id inexistente", async () => {
     const token = await getToken();
     const res = await request(app)
-      .delete("/users/9999/photo")
+      .delete("/users/00000000-0000-0000-0000-000000000000/photo")
       .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(404);
   });
 
   it("retorna 401 sem token", async () => {
-    const res = await request(app).delete("/users/1/photo");
+    const res = await request(app).delete(`/users/${adminId}/photo`);
     expect(res.status).toBe(401);
   });
 
@@ -289,7 +295,7 @@ describe("DELETE /users/:id/photo", () => {
 
     const userToken = await getToken({ email: "comum@test.com", password: "abc" });
     const res = await request(app)
-      .delete("/users/1/photo")
+      .delete(`/users/${adminId}/photo`)
       .set("Authorization", `Bearer ${userToken}`);
     expect(res.status).toBe(403);
   });
@@ -302,20 +308,20 @@ describe("POST /users/:id/attachments", () => {
   it("faz upload de anexo e retorna 201", async () => {
     const token = await getToken();
     const res = await request(app)
-      .post("/users/1/attachments")
+      .post(`/users/${adminId}/attachments`)
       .set("Authorization", `Bearer ${token}`)
       .attach("files", Buffer.from("conteudo do arquivo"), "arquivo.txt");
     expect(res.status).toBe(201);
     expect(Array.isArray(res.body)).toBe(true);
     expect(res.body.length).toBe(1);
     expect(res.body[0]).toHaveProperty("id");
-    expect(res.body[0]).toHaveProperty("userId", 1);
+    expect(res.body[0]).toHaveProperty("userId", adminId);
   });
 
   it("retorna 400 sem arquivos", async () => {
     const token = await getToken();
     const res = await request(app)
-      .post("/users/1/attachments")
+      .post(`/users/${adminId}/attachments`)
       .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(400);
   });
@@ -323,7 +329,7 @@ describe("POST /users/:id/attachments", () => {
   it("retorna 404 para usuário inexistente", async () => {
     const token = await getToken();
     const res = await request(app)
-      .post("/users/9999/attachments")
+      .post("/users/00000000-0000-0000-0000-000000000000/attachments")
       .set("Authorization", `Bearer ${token}`)
       .attach("files", Buffer.from("x"), "x.txt");
     expect(res.status).toBe(404);
@@ -331,7 +337,7 @@ describe("POST /users/:id/attachments", () => {
 
   it("retorna 401 sem token", async () => {
     const res = await request(app)
-      .post("/users/1/attachments")
+      .post(`/users/${adminId}/attachments`)
       .attach("files", Buffer.from("x"), "x.txt");
     expect(res.status).toBe(401);
   });
@@ -345,7 +351,7 @@ describe("POST /users/:id/attachments", () => {
 
     const userToken = await getToken({ email: "outro@test.com", password: "abc" });
     const res = await request(app)
-      .post("/users/1/attachments")
+      .post(`/users/${adminId}/attachments`)
       .set("Authorization", `Bearer ${userToken}`)
       .attach("files", Buffer.from("x"), "x.txt");
     expect(res.status).toBe(403);
@@ -359,12 +365,12 @@ describe("GET /users/:id/attachments", () => {
   it("retorna lista de anexos do usuário", async () => {
     const token = await getToken();
     await request(app)
-      .post("/users/1/attachments")
+      .post(`/users/${adminId}/attachments`)
       .set("Authorization", `Bearer ${token}`)
       .attach("files", Buffer.from("conteudo"), "doc.txt");
 
     const res = await request(app)
-      .get("/users/1/attachments")
+      .get(`/users/${adminId}/attachments`)
       .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(Array.isArray(res.body)).toBe(true);
@@ -374,14 +380,14 @@ describe("GET /users/:id/attachments", () => {
   it("retorna lista vazia para usuário sem anexos", async () => {
     const token = await getToken();
     const res = await request(app)
-      .get("/users/1/attachments")
+      .get(`/users/${adminId}/attachments`)
       .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(200);
     expect(res.body).toEqual([]);
   });
 
   it("retorna 401 sem token", async () => {
-    const res = await request(app).get("/users/1/attachments");
+    const res = await request(app).get(`/users/${adminId}/attachments`);
     expect(res.status).toBe(401);
   });
 
@@ -394,7 +400,7 @@ describe("GET /users/:id/attachments", () => {
 
     const userToken = await getToken({ email: "outro2@test.com", password: "abc" });
     const res = await request(app)
-      .get("/users/1/attachments")
+      .get(`/users/${adminId}/attachments`)
       .set("Authorization", `Bearer ${userToken}`);
     expect(res.status).toBe(403);
   });
@@ -404,19 +410,20 @@ describe("GET /users/:id/attachments", () => {
 // DELETE /users/:id/attachments/:attachmentId
 // ---------------------------------------------------------------------------
 describe("DELETE /users/:id/attachments/:attachmentId", () => {
-  async function createAttachment(token: string, userId = 1): Promise<number> {
+  async function createAttachment(token: string, userId?: string): Promise<string> {
+    const uid = userId ?? adminId;
     const res = await request(app)
-      .post(`/users/${userId}/attachments`)
+      .post(`/users/${uid}/attachments`)
       .set("Authorization", `Bearer ${token}`)
       .attach("files", Buffer.from("conteudo"), "arq.txt");
-    return (res.body as Array<{ id: number }>)[0].id;
+    return (res.body as Array<{ id: string }>)[0].id;
   }
 
   it("remove anexo e retorna 204", async () => {
     const token = await getToken();
     const attachmentId = await createAttachment(token);
     const res = await request(app)
-      .delete(`/users/1/attachments/${attachmentId}`)
+      .delete(`/users/${adminId}/attachments/${attachmentId}`)
       .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(204);
   });
@@ -424,13 +431,13 @@ describe("DELETE /users/:id/attachments/:attachmentId", () => {
   it("retorna 404 para anexo inexistente", async () => {
     const token = await getToken();
     const res = await request(app)
-      .delete("/users/1/attachments/9999")
+      .delete(`/users/${adminId}/attachments/00000000-0000-0000-0000-000000000000`)
       .set("Authorization", `Bearer ${token}`);
     expect(res.status).toBe(404);
   });
 
   it("retorna 401 sem token", async () => {
-    const res = await request(app).delete("/users/1/attachments/1");
+    const res = await request(app).delete(`/users/${adminId}/attachments/some-id`);
     expect(res.status).toBe(401);
   });
 
@@ -445,7 +452,7 @@ describe("DELETE /users/:id/attachments/:attachmentId", () => {
 
     const userToken = await getToken({ email: "outro3@test.com", password: "abc" });
     const res = await request(app)
-      .delete(`/users/1/attachments/${attachmentId}`)
+      .delete(`/users/${adminId}/attachments/${attachmentId}`)
       .set("Authorization", `Bearer ${userToken}`);
     expect(res.status).toBe(403);
   });

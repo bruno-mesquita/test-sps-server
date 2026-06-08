@@ -32,6 +32,6 @@ describe("AuthService.login", () => {
     const payload = jwt.default.decode(token as string) as Record<string, unknown>;
     expect(payload.email).toBe("admin@spsgroup.com.br");
     expect(payload.type).toBe("admin");
-    expect(payload.id).toBe(1);
+    expect(typeof payload.id).toBe("string");
   });
 });

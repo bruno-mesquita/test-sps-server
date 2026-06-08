@@ -1,7 +1,7 @@
 import type { IUserRepository, IAttachmentRepository, IPhotoRepository } from "./interfaces";
-import { UserRepository } from "./UserRepository";
-import { AttachmentRepository } from "./attachmentRepository";
-import { PhotoRepository } from "./photoRepository";
+import { UserRepository, userRepository } from "./UserRepository";
+import { AttachmentRepository, attachmentRepository } from "./attachmentRepository";
+import { PhotoRepository, photoRepository } from "./photoRepository";
 import { MongoUserRepository } from "./mongo/MongoUserRepository";
 import { MongoAttachmentRepository } from "./mongo/MongoAttachmentRepository";
 import { MongoPhotoRepository } from "./mongo/MongoPhotoRepository";
@@ -11,17 +11,17 @@ export class RepositoryFactory {
 
   static createUserRepository(): IUserRepository {
     if (process.env.REPO_TYPE === "mongo") return new MongoUserRepository();
-    return new UserRepository();
+    return userRepository;
   }
 
   static createAttachmentRepository(): IAttachmentRepository {
     if (process.env.REPO_TYPE === "mongo") return new MongoAttachmentRepository();
-    return new AttachmentRepository();
+    return attachmentRepository;
   }
 
   static createPhotoRepository(): IPhotoRepository {
     if (process.env.REPO_TYPE === "mongo") return new MongoPhotoRepository();
-    return new PhotoRepository();
+    return photoRepository;
   }
 
   static async seed(): Promise<void> {
