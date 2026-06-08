@@ -4,22 +4,20 @@ import type { IPhotoRepository } from "./interfaces";
 type CreateInput = Omit<Photo, "id">;
 
 export class PhotoRepository implements IPhotoRepository {
-  private nextId = 1;
   photos: Photo[] = [];
 
   async createPhoto(data: CreateInput) {
-    const photo: Photo = { id: this.nextId++, ...data };
+    const photo: Photo = { id: crypto.randomUUID(), ...data };
     this.photos.push(photo);
     return photo;
   }
 
-  async findPhotoById(id: number) {
+  async findPhotoById(id: string) {
     return this.photos.find((p) => p.id === id);
   }
 
   reset() {
     this.photos = [];
-    this.nextId = 1;
   }
 }
 

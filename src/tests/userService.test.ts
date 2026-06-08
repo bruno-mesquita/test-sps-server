@@ -6,6 +6,8 @@ import { UserService } from "../services/userService";
 import type { IPhotoRepository } from "../repositories/interfaces";
 import type { IPhotoService } from "../services/interfaces";
 
+const NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000";
+
 const mockPhotoRepo: IPhotoRepository = {
   createPhoto: vi.fn(),
   findPhotoById: vi.fn().mockResolvedValue(undefined),
@@ -13,7 +15,7 @@ const mockPhotoRepo: IPhotoRepository = {
 
 const mockPhotoService: IPhotoService = {
   processPhoto: vi.fn().mockResolvedValue({
-    id: 99,
+    id: "photo-uuid-99",
     filename: "img.jpg",
     originalUrl: "http://localhost/uploads/original.jpg",
     previewUrl: "http://localhost/uploads/preview.jpg",
@@ -22,10 +24,13 @@ const mockPhotoService: IPhotoService = {
 
 let userRepo: UserRepository;
 let userService: UserService;
+let adminId: string;
 
-beforeEach(() => {
+beforeEach(async () => {
   userRepo = new UserRepository();
   userService = new UserService(userRepo, new AttachmentRepository(), mockPhotoRepo, mockPhotoService);
+  const admin = await userRepo.findByEmail("admin@spsgroup.com.br");
+  adminId = admin!.id;
 });
 
 describe("UserService.list", () => {
@@ -45,14 +50,14 @@ describe("UserService.list", () => {
 
 describe("UserService.getById", () => {
   it("retorna usuário sem password para id existente", async () => {
-    const user = await userService.getById(1);
+    const user = await userService.getById(adminId);
     expect(user).not.toBeNull();
     expect(user).not.toHaveProperty("password");
-    expect(user?.id).toBe(1);
+    expect(user?.id).toBe(adminId);
   });
 
   it("retorna null para id inexistente", async () => {
-    const user = await userService.getById(9999);
+    const user = await userService.getById(NONEXISTENT_ID);
     expect(user).toBeNull();
   });
 });
@@ -86,7 +91,7 @@ describe("UserService.create", () => {
 
 describe("UserService.update", () => {
   it("atualiza nome e retorna usuário sem password", async () => {
-    const result = await userService.update(1, { name: "Admin Atualizado" });
+    const result = await userService.update(adminId, { name: "Admin Atualizado" });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.user.name).toBe("Admin Atualizado");
@@ -94,7 +99,7 @@ describe("UserService.update", () => {
   });
 
   it("retorna not_found para id inexistente", async () => {
-    const result = await userService.update(9999, { name: "X" });
+    const result = await userService.update(NONEXISTENT_ID, { name: "X" });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.reason).toBe("not_found");
@@ -102,26 +107,26 @@ describe("UserService.update", () => {
 
   it("retorna conflict ao tentar email já em uso por outro usuário", async () => {
     await userService.create({ name: "Maria", email: "maria@test.com", type: "user", password: "x" });
-    const result = await userService.update(1, { email: "maria@test.com" });
+    const result = await userService.update(adminId, { email: "maria@test.com" });
     expect(result.ok).toBe(false);
     if (result.ok) return;
     expect(result.reason).toBe("conflict");
   });
 
   it("permite atualizar email para o próprio email do usuário", async () => {
-    const result = await userService.update(1, { email: "admin@spsgroup.com.br" });
+    const result = await userService.update(adminId, { email: "admin@spsgroup.com.br" });
     expect(result.ok).toBe(true);
   });
 });
 
 describe("UserService.delete", () => {
   it("remove usuário existente e retorna true", async () => {
-    const result = await userService.delete(1);
+    const result = await userService.delete(adminId);
     expect(result).toBe(true);
   });
 
   it("retorna false para id inexistente", async () => {
-    const result = await userService.delete(9999);
+    const result = await userService.delete(NONEXISTENT_ID);
     expect(result).toBe(false);
   });
 });

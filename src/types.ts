@@ -1,22 +1,22 @@
 export interface Photo {
-  id: number;
+  id: string;
   filename: string;
   previewUrl: string;
   originalUrl: string;
 }
 
 export interface User {
-  id: number;
+  id: string;
   name: string;
   email: string;
   type: string;
   password: string;
-  photoId?: number;
+  photoId?: string;
 }
 
 export interface Attachment {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   filename: string;
   originalName: string;
   mimetype: string;
@@ -26,7 +26,7 @@ export interface Attachment {
 }
 
 export interface JwtPayload {
-  id: number;
+  id: string;
   email: string;
   type: string;
 }

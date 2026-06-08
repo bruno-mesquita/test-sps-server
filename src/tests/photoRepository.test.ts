@@ -1,25 +1,28 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { photoRepository } from "../repositories/photoRepository";
 
+const NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000";
+
 beforeEach(() => {
   photoRepository.reset();
 });
 
 describe("PhotoRepository.createPhoto", () => {
-  it("cria foto com id autoincremental", async () => {
+  it("cria foto com id UUID", async () => {
     const photo = await photoRepository.createPhoto({
       filename: "img.jpg",
       originalUrl: "http://localhost/uploads/original.jpg",
       previewUrl: "http://localhost/uploads/preview.jpg",
     });
-    expect(photo.id).toBe(1);
+    expect(typeof photo.id).toBe("string");
+    expect(photo.id.length).toBeGreaterThan(0);
     expect(photo.filename).toBe("img.jpg");
   });
 
-  it("ids incrementam a cada criação", async () => {
+  it("ids únicos a cada criação", async () => {
     const a = await photoRepository.createPhoto({ filename: "a.jpg", originalUrl: "", previewUrl: "" });
     const b = await photoRepository.createPhoto({ filename: "b.jpg", originalUrl: "", previewUrl: "" });
-    expect(b.id).toBe(a.id + 1);
+    expect(a.id).not.toBe(b.id);
   });
 });
 
@@ -31,7 +34,7 @@ describe("PhotoRepository.findPhotoById", () => {
   });
 
   it("retorna undefined para id inexistente", async () => {
-    const found = await photoRepository.findPhotoById(9999);
+    const found = await photoRepository.findPhotoById(NONEXISTENT_ID);
     expect(found).toBeUndefined();
   });
 });

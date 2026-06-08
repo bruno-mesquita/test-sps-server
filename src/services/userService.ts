@@ -48,7 +48,7 @@ export class UserService {
     );
   }
 
-  async getById(id: number): Promise<UserWithPhotoAndAttachments | null> {
+  async getById(id: string): Promise<UserWithPhotoAndAttachments | null> {
     const user = await this.userRepo.findById(id);
     if (!user) return null;
     const [withPhoto, attachments] = await Promise.all([
@@ -68,7 +68,7 @@ export class UserService {
     const existing = await this.userRepo.findByEmail(email);
     if (existing) return null;
 
-    let photoId: number | undefined;
+    let photoId: string | undefined;
     if (file) {
       const photo = await this.photoSvc.processPhoto(file);
       photoId = photo.id;
@@ -81,7 +81,7 @@ export class UserService {
   }
 
   async update(
-    id: number,
+    id: string,
     {
       name,
       email,
@@ -95,7 +95,7 @@ export class UserService {
       if (existing && existing.id !== id) return { ok: false, reason: "conflict" };
     }
 
-    let photoId: number | undefined;
+    let photoId: string | undefined;
     if (file) {
       const photo = await this.photoSvc.processPhoto(file);
       photoId = photo.id;
@@ -114,11 +114,11 @@ export class UserService {
     return { ok: true, user: await this.withPhoto(user) };
   }
 
-  async delete(id: number): Promise<boolean> {
+  async delete(id: string): Promise<boolean> {
     return this.userRepo.remove(id);
   }
 
-  async clearPhoto(id: number): Promise<UserWithPhoto | null> {
+  async clearPhoto(id: string): Promise<UserWithPhoto | null> {
     const user = await this.userRepo.clearPhoto(id);
     if (!user) return null;
     return this.withPhoto(user);

@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import { attachmentService } from "../services/attachmentService";
 
-function canActOnUser(req: Request, userId: number): boolean {
+function canActOnUser(req: Request, userId: string): boolean {
   return req.user!.id === userId || req.user!.type === "admin";
 }
 
 export class AttachmentController {
   async upload(req: Request, res: Response) {
-    const userId = parseInt(req.params.id as string);
+    const userId = req.params.id as string;
     if (!canActOnUser(req, userId)) return res.status(403).json({ error: "Acesso negado" });
 
     const files = req.files as Express.Multer.File[];
@@ -19,7 +19,7 @@ export class AttachmentController {
   }
 
   async list(req: Request, res: Response) {
-    const userId = parseInt(req.params.id as string);
+    const userId = req.params.id as string;
     if (!canActOnUser(req, userId)) return res.status(403).json({ error: "Acesso negado" });
 
     const attachments = await attachmentService.listByUser(userId);
@@ -28,8 +28,8 @@ export class AttachmentController {
   }
 
   async remove(req: Request, res: Response) {
-    const userId = parseInt(req.params.id as string);
-    const attachmentId = parseInt(req.params.attachmentId as string);
+    const userId = req.params.id as string;
+    const attachmentId = req.params.attachmentId as string;
     if (!canActOnUser(req, userId)) return res.status(403).json({ error: "Acesso negado" });
 
     const result = await attachmentService.remove(userId, attachmentId);

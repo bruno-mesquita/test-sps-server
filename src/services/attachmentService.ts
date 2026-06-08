@@ -14,7 +14,7 @@ export class AttachmentService {
   ) {}
 
   async createMany(
-    userId: number,
+    userId: string,
     files: Express.Multer.File[],
   ): Promise<Attachment[] | null> {
     const user = await this.userRepo.findById(userId);
@@ -34,15 +34,15 @@ export class AttachmentService {
     );
   }
 
-  async listByUser(userId: number): Promise<Attachment[] | null> {
+  async listByUser(userId: string): Promise<Attachment[] | null> {
     const user = await this.userRepo.findById(userId);
     if (!user) return null;
     return this.attachmentRepo.findByUserId(userId);
   }
 
   async remove(
-    userId: number,
-    attachmentId: number,
+    userId: string,
+    attachmentId: string,
   ): Promise<"ok" | "not_found"> {
     const attachment = await this.attachmentRepo.findById(attachmentId);
     if (!attachment || attachment.userId !== userId) return "not_found";

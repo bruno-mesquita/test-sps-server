@@ -8,7 +8,7 @@ export class UserController {
   }
 
   async getById(req: Request, res: Response) {
-    const id = parseInt(req.params.id as string);
+    const id = req.params.id as string;
     const user = await userService.getById(id);
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
     return res.json(user);
@@ -24,7 +24,7 @@ export class UserController {
   }
 
   async update(req: Request, res: Response) {
-    const id = parseInt(req.params.id as string);
+    const id = req.params.id as string;
     const parsed = updateUserSchema.safeParse(req.body);
     if (!parsed.success) return res.status(400).json({ error: parsed.error.issues });
 
@@ -37,14 +37,14 @@ export class UserController {
   }
 
   async delete(req: Request, res: Response) {
-    const id = parseInt(req.params.id as string);
+    const id = req.params.id as string;
     const removed = await userService.delete(id);
     if (!removed) return res.status(404).json({ error: "Usuário não encontrado" });
     return res.status(204).send();
   }
 
   async clearPhoto(req: Request, res: Response) {
-    const id = parseInt(req.params.id as string);
+    const id = req.params.id as string;
     const user = await userService.clearPhoto(id);
     if (!user) return res.status(404).json({ error: "Usuário não encontrado" });
     return res.json(user);

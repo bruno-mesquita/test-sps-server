@@ -4,12 +4,11 @@ import type { IAttachmentRepository } from "./interfaces";
 type CreateInput = Omit<Attachment, "id" | "createdAt">;
 
 export class AttachmentRepository implements IAttachmentRepository {
-  private nextId = 1;
   attachments: Attachment[] = [];
 
   async createAttachment(data: CreateInput) {
     const attachment: Attachment = {
-      id: this.nextId++,
+      id: crypto.randomUUID(),
       createdAt: new Date().toISOString(),
       ...data,
     };
@@ -17,19 +16,19 @@ export class AttachmentRepository implements IAttachmentRepository {
     return attachment;
   }
 
-  async findByUserId(userId: number) {
+  async findByUserId(userId: string) {
     return this.attachments.filter((a) => a.userId === userId);
   }
 
-  async findById(id: number) {
+  async findById(id: string) {
     return this.attachments.find((a) => a.id === id);
   }
 
-  async getCountByUserId(userId: number) {
+  async getCountByUserId(userId: string) {
     return this.attachments.filter((a) => a.userId === userId).length;
   }
 
-  async removeAttachment(id: number) {
+  async removeAttachment(id: string) {
     const idx = this.attachments.findIndex((a) => a.id === id);
     if (idx === -1) return false;
     this.attachments.splice(idx, 1);
@@ -38,7 +37,6 @@ export class AttachmentRepository implements IAttachmentRepository {
 
   reset() {
     this.attachments = [];
-    this.nextId = 1;
   }
 }
 

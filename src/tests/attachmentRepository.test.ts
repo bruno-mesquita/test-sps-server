@@ -1,8 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import { attachmentRepository } from "../repositories/attachmentRepository";
 
+const USER_ID = "user-test-1";
+const OTHER_USER_ID = "user-test-2";
+const NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000";
+
 const BASE: Parameters<typeof attachmentRepository.createAttachment>[0] = {
-  userId: 1,
+  userId: USER_ID,
   filename: "file.pdf",
   originalName: "documento.pdf",
   mimetype: "application/pdf",
@@ -15,31 +19,32 @@ beforeEach(() => {
 });
 
 describe("AttachmentRepository.createAttachment", () => {
-  it("cria attachment com id e createdAt", async () => {
+  it("cria attachment com id UUID e createdAt", async () => {
     const att = await attachmentRepository.createAttachment(BASE);
-    expect(att.id).toBe(1);
-    expect(att.userId).toBe(1);
+    expect(typeof att.id).toBe("string");
+    expect(att.id.length).toBeGreaterThan(0);
+    expect(att.userId).toBe(USER_ID);
     expect(att.createdAt).toBeDefined();
   });
 
-  it("ids incrementam a cada criação", async () => {
+  it("ids únicos a cada criação", async () => {
     const a = await attachmentRepository.createAttachment(BASE);
     const b = await attachmentRepository.createAttachment({ ...BASE, filename: "b.pdf" });
-    expect(b.id).toBe(a.id + 1);
+    expect(a.id).not.toBe(b.id);
   });
 });
 
 describe("AttachmentRepository.findByUserId", () => {
   it("retorna attachments do usuário", async () => {
     await attachmentRepository.createAttachment(BASE);
-    await attachmentRepository.createAttachment({ ...BASE, userId: 2, filename: "outro.pdf" });
-    const result = await attachmentRepository.findByUserId(1);
+    await attachmentRepository.createAttachment({ ...BASE, userId: OTHER_USER_ID, filename: "outro.pdf" });
+    const result = await attachmentRepository.findByUserId(USER_ID);
     expect(result).toHaveLength(1);
-    expect(result[0].userId).toBe(1);
+    expect(result[0].userId).toBe(USER_ID);
   });
 
   it("retorna array vazio se usuário não tem attachments", async () => {
-    const result = await attachmentRepository.findByUserId(99);
+    const result = await attachmentRepository.findByUserId(NONEXISTENT_ID);
     expect(result).toEqual([]);
   });
 });
@@ -52,7 +57,7 @@ describe("AttachmentRepository.findById", () => {
   });
 
   it("retorna undefined para id inexistente", async () => {
-    const found = await attachmentRepository.findById(9999);
+    const found = await attachmentRepository.findById(NONEXISTENT_ID);
     expect(found).toBeUndefined();
   });
 });
@@ -66,7 +71,7 @@ describe("AttachmentRepository.removeAttachment", () => {
   });
 
   it("retorna false para id inexistente", async () => {
-    const result = await attachmentRepository.removeAttachment(9999);
+    const result = await attachmentRepository.removeAttachment(NONEXISTENT_ID);
     expect(result).toBe(false);
   });
 });
