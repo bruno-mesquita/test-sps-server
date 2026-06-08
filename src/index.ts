@@ -4,7 +4,7 @@ import { repositories, RepositoryFactory } from "./repositories/factory";
 
 const port = process.env.PORT ?? 3000;
 
-RepositoryFactory.seed(repositories).then(() => {
+RepositoryFactory.seed().then(() => {
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
   });
