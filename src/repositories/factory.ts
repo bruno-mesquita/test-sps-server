@@ -31,8 +31,3 @@ export class RepositoryFactory {
   }
 }
 
-export const repositories = {
-  userRepo: RepositoryFactory.createUserRepository(),
-  attachmentRepo: RepositoryFactory.createAttachmentRepository(),
-  photoRepo: RepositoryFactory.createPhotoRepository(),
-};

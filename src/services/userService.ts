@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { repositories } from "../repositories/factory";
+import { RepositoryFactory } from "../repositories/factory";
 import type { IUserRepository, IAttachmentRepository, IPhotoRepository } from "../repositories/interfaces";
 import type { IPhotoService } from "./interfaces";
 import { photoService } from "./photoService";
@@ -124,8 +124,8 @@ export class UserService {
 }
 
 export const userService = new UserService(
-  repositories.userRepo,
-  repositories.attachmentRepo,
-  repositories.photoRepo,
+  RepositoryFactory.createUserRepository(),
+  RepositoryFactory.createAttachmentRepository(),
+  RepositoryFactory.createPhotoRepository(),
   photoService,
 );

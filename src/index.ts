@@ -1,6 +1,6 @@
 import "dotenv/config";
 import app from "./app";
-import { repositories, RepositoryFactory } from "./repositories/factory";
+import { RepositoryFactory } from "./repositories/factory";
 
 const port = process.env.PORT ?? 3000;
 

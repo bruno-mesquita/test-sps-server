@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { repositories } from "../repositories/factory";
+import { RepositoryFactory } from "../repositories/factory";
 import type { IUserRepository, IAttachmentRepository } from "../repositories/interfaces";
 import type { Attachment } from "../types";
 
@@ -53,4 +53,7 @@ export class AttachmentService {
   }
 }
 
-export const attachmentService = new AttachmentService(repositories.userRepo, repositories.attachmentRepo);
+export const attachmentService = new AttachmentService(
+  RepositoryFactory.createUserRepository(),
+  RepositoryFactory.createAttachmentRepository(),
+);
