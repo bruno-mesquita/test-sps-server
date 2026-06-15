@@ -1,10 +1,13 @@
 import bcrypt from "bcrypt";
+import type { UploadedFile } from "express-fileupload";
 import { RepositoryFactory } from "../repositories/factory";
 import type { IUserRepository, IAttachmentRepository, IPhotoRepository } from "../repositories/interfaces";
 import type { IPhotoService } from "./interfaces";
-import type { StoredFile } from "./storageService";
+import { storageService } from "./storageService";
 import { photoService } from "./photoService";
 import { Attachment, User } from "../types";
+
+const PHOTO_MIMES = ["image/jpeg", "image/png", "image/webp"];
 
 type SafeUser = Omit<User, "password" | "photoId">;
 type UserWithPhoto = SafeUser & { originalUrl: string | null; previewUrl: string | null };
@@ -63,13 +66,14 @@ export class UserService {
     type,
     password,
     file,
-  }: Omit<User, "id"> & { file?: StoredFile }): Promise<SafeUser | null> {
+  }: Omit<User, "id"> & { file?: UploadedFile }): Promise<SafeUser | null> {
     const existing = await this.userRepo.findByEmail(email);
     if (existing) return null;
 
     let photoId: string | undefined;
     if (file) {
-      const photo = await this.photoSvc.processPhoto(file);
+      const storedFile = await storageService.save(file, { allowedMimes: PHOTO_MIMES });
+      const photo = await this.photoSvc.processPhoto(storedFile);
       photoId = photo.id;
     }
 
@@ -87,7 +91,7 @@ export class UserService {
       type,
       password,
       file,
-    }: Partial<Omit<User, "id">> & { file?: StoredFile },
+    }: Partial<Omit<User, "id">> & { file?: UploadedFile },
   ): Promise<UpdateResult> {
     if (email) {
       const existing = await this.userRepo.findByEmail(email);
@@ -96,7 +100,8 @@ export class UserService {
 
     let photoId: string | undefined;
     if (file) {
-      const photo = await this.photoSvc.processPhoto(file);
+      const storedFile = await storageService.save(file, { allowedMimes: PHOTO_MIMES });
+      const photo = await this.photoSvc.processPhoto(storedFile);
       photoId = photo.id;
     }
 
