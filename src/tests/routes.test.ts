@@ -164,6 +164,24 @@ describe("POST /users", () => {
     const res = await request(app).post("/users").send(newUser);
     expect(res.status).toBe(401);
   });
+
+  it("cria usuário com attachments via multipart", async () => {
+    const token = await getToken();
+    const res = await request(app)
+      .post("/users")
+      .set("Authorization", `Bearer ${token}`)
+      .field("name", "Com Anexos")
+      .field("email", "anexos@test.com")
+      .field("type", "user")
+      .field("password", "pass123")
+      .attach("attachments", Buffer.from("conteudo1"), "doc1.txt")
+      .attach("attachments", Buffer.from("conteudo2"), "doc2.txt");
+    expect(res.status).toBe(201);
+    expect(res.body.attachments).toHaveLength(2);
+    expect(res.body.attachments[0]).toHaveProperty("id");
+    expect(res.body.attachments[0].userId).toBe(res.body.id);
+  });
+
 });
 
 // ---------------------------------------------------------------------------

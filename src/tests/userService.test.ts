@@ -3,8 +3,16 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import { UserRepository } from "../repositories/UserRepository";
 import { AttachmentRepository } from "../repositories/attachmentRepository";
 import { UserService } from "../services/userService";
+import { storageService } from "../services/storageService";
 import type { IPhotoRepository } from "../repositories/interfaces";
 import type { IPhotoService } from "../services/interfaces";
+
+vi.mock("../services/storageService", () => ({
+  storageService: {
+    save: vi.fn(),
+    saveMany: vi.fn(),
+  },
+}));
 
 const NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000";
 
@@ -46,6 +54,12 @@ describe("UserService.list", () => {
     expect(users[0]).toHaveProperty("originalUrl");
     expect(users[0]).toHaveProperty("previewUrl");
   });
+
+  it("retorna attachmentCount para cada usuário", async () => {
+    const users = await userService.list();
+    expect(users[0]).toHaveProperty("attachmentCount");
+    expect(typeof users[0].attachmentCount).toBe("number");
+  });
 });
 
 describe("UserService.getById", () => {
@@ -86,6 +100,27 @@ describe("UserService.create", () => {
     await userService.create({ name: "A", email: "dup@test.com", type: "user", password: "x" });
     const result = await userService.create({ name: "B", email: "dup@test.com", type: "user", password: "y" });
     expect(result).toBeNull();
+  });
+
+  it("cria usuário com attachments", async () => {
+    const fakeFiles = [
+      { filename: "a.pdf", originalName: "a.pdf", mimetype: "application/pdf", size: 100, path: "uploads/a.pdf" },
+      { filename: "b.pdf", originalName: "b.pdf", mimetype: "application/pdf", size: 200, path: "uploads/b.pdf" },
+    ];
+    vi.mocked(storageService.saveMany).mockResolvedValue(fakeFiles);
+
+    const result = await userService.create({
+      name: "Com Anexos",
+      email: "anexos@test.com",
+      type: "user",
+      password: "pass123",
+      attachments: [{ name: "a.pdf", data: Buffer.from("x"), size: 100, mimetype: "application/pdf" } as any],
+    });
+    expect(result).not.toBeNull();
+    expect(result!.attachments).toHaveLength(2);
+    expect(result!.attachments[0].originalName).toBe("a.pdf");
+    expect(result!.attachments[0].userId).toBe(result!.id);
+    expect(storageService.saveMany).toHaveBeenCalledOnce();
   });
 });
 
