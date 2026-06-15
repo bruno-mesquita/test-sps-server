@@ -25,7 +25,13 @@ const options: swaggerJsdoc.Options = {
             name: { type: "string" },
             email: { type: "string", format: "email" },
             type: { type: "string", enum: ["admin", "user"] },
-            photoId: { type: "integer", nullable: true },
+            originalUrl: { type: "string", nullable: true },
+            previewUrl: { type: "string", nullable: true },
+            attachmentCount: { type: "integer" },
+            attachments: {
+              type: "array",
+              items: { $ref: "#/components/schemas/Attachment" },
+            },
           },
         },
         Attachment: {

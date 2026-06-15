@@ -22,7 +22,12 @@ export class UserController {
     const raw = req.files?.photo;
     const uploadedFile = raw ? (Array.isArray(raw) ? raw[0] : raw) as UploadedFile : undefined;
 
-    const user = await userService.create({ ...parsed.data, file: uploadedFile });
+    const rawAttachments = req.files?.attachments;
+    const uploadedAttachments = rawAttachments
+      ? (Array.isArray(rawAttachments) ? rawAttachments : [rawAttachments]) as UploadedFile[]
+      : [];
+
+    const user = await userService.create({ ...parsed.data, file: uploadedFile, attachments: uploadedAttachments });
     if (!user) return res.status(409).json({ error: "Email já cadastrado" });
     return res.status(201).json(user);
   }

@@ -86,6 +86,11 @@ router.get("/users/:id", auth, (req, res) => userController.getById(req, res));
  *                   photo:
  *                     type: string
  *                     format: binary
+ *                   attachments:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                       format: binary
  *     responses:
  *       201:
  *         description: User created

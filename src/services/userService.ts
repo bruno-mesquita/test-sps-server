@@ -66,7 +66,8 @@ export class UserService {
     type,
     password,
     file,
-  }: Omit<User, "id"> & { file?: UploadedFile }): Promise<SafeUser | null> {
+    attachments,
+  }: Omit<User, "id"> & { file?: UploadedFile; attachments?: UploadedFile[] }): Promise<UserWithPhotoAndAttachments | null> {
     const existing = await this.userRepo.findByEmail(email);
     if (existing) return null;
 
@@ -79,8 +80,27 @@ export class UserService {
 
     const hashed = await bcrypt.hash(password, 10);
     const user = await this.userRepo.create({ name, email, type, password: hashed, photoId });
-    const { password: _pw, photoId: _pid, ...safe } = user;
-    return safe;
+
+    const port = process.env.PORT ?? 3000;
+    let attachmentRecords: Attachment[] = [];
+    if (attachments && attachments.length > 0) {
+      const storedFiles = await storageService.saveMany(attachments);
+      attachmentRecords = await Promise.all(
+        storedFiles.map((f) =>
+          this.attachmentRepo.createAttachment({
+            userId: user.id,
+            filename: f.filename,
+            originalName: f.originalName,
+            mimetype: f.mimetype,
+            size: f.size,
+            url: `http://localhost:${port}/uploads/${f.filename}`,
+          }),
+        ),
+      );
+    }
+
+    const withPhoto = await this.withPhoto(user);
+    return { ...withPhoto, attachments: attachmentRecords };
   }
 
   async update(
