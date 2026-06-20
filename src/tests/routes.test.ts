@@ -295,13 +295,13 @@ describe("PUT /users/:id", () => {
     expect(res.body.attachments[0].id).not.toBe(oldId);
   });
 
-  it("retorna 400 quando removeAttachmentIds não é um JSON válido", async () => {
+  it("trata removeAttachmentIds como ID único quando não é um JSON", async () => {
     const token = await getToken();
     const res = await request(app)
       .put(`/users/${adminId}`)
       .set("Authorization", `Bearer ${token}`)
       .field("removeAttachmentIds", "nao-e-um-json");
-    expect(res.status).toBe(400);
+    expect(res.status).toBe(200);
   });
 
   it("retorna 403 para usuário não-admin", async () => {

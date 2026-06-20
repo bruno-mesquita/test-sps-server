@@ -1,5 +1,4 @@
 import type { Request, Response } from "express";
-import type { UploadedFile } from "express-fileupload";
 import { createUserSchema, updateUserSchema } from "../schemas";
 import { userService } from "../services/userService";
 
@@ -17,50 +16,28 @@ export class UserController {
   }
 
   async create(req: Request, res: Response) {
-    const parsed = createUserSchema.safeParse(req.body);
+    const parsed = createUserSchema.safeParse({
+      ...req.body,
+      file: req.files?.photo,
+      attachments: req.files?.attachments,
+    });
     if (!parsed.success) return res.status(400).json({ error: parsed.error.issues });
 
-    const raw = req.files?.photo;
-    const uploadedFile = raw ? (Array.isArray(raw) ? raw[0] : raw) as UploadedFile : undefined;
-
-    const rawAttachments = req.files?.attachments;
-    const uploadedAttachments = rawAttachments
-      ? (Array.isArray(rawAttachments) ? rawAttachments : [rawAttachments]) as UploadedFile[]
-      : [];
-
-    const user = await userService.create({ ...parsed.data, file: uploadedFile, attachments: uploadedAttachments });
+    const user = await userService.create(parsed.data);
     if (!user) return res.status(409).json({ error: "Email já cadastrado" });
     return res.status(201).json(user);
   }
 
   async update(req: Request, res: Response) {
     const id = req.params.id as string;
-    const parsed = updateUserSchema.safeParse(req.body);
+    const parsed = updateUserSchema.safeParse({
+      ...req.body,
+      file: req.files?.photo,
+      attachments: req.files?.attachments,
+    });
     if (!parsed.success) return res.status(400).json({ error: parsed.error.issues });
 
-    const raw = req.files?.photo;
-    const uploadedFile = raw ? (Array.isArray(raw) ? raw[0] : raw) as UploadedFile : undefined;
-
-    const rawAttachments = req.files?.attachments;
-    const uploadedAttachments = rawAttachments
-      ? (Array.isArray(rawAttachments) ? rawAttachments : [rawAttachments]) as UploadedFile[]
-      : [];
-
-    let removeAttachmentIds: string[] = [];
-    if (req.body.removeAttachmentIds) {
-      try {
-        removeAttachmentIds = JSON.parse(req.body.removeAttachmentIds);
-      } catch {
-        return res.status(400).json({ error: "removeAttachmentIds deve ser um JSON array de IDs" });
-      }
-    }
-
-    const result = await userService.update(id, {
-      ...parsed.data,
-      file: uploadedFile,
-      attachments: uploadedAttachments,
-      removeAttachmentIds,
-    });
+    const result = await userService.update(id, parsed.data);
     if (!result.ok) {
       const status = result.reason === "conflict" ? 409 : 404;
       return res.status(status).json({
