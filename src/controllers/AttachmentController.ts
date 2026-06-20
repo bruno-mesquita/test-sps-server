@@ -3,14 +3,9 @@ import type { UploadedFile } from "express-fileupload";
 import { attachmentService } from "../services/attachmentService";
 import { storageService } from "../services/storageService";
 
-function canActOnUser(req: Request, userId: string): boolean {
-  return req.user!.id === userId || req.user!.type === "admin";
-}
-
 export class AttachmentController {
   async upload(req: Request, res: Response) {
     const userId = req.params.id as string;
-    if (!canActOnUser(req, userId)) return res.status(403).json({ error: "Acesso negado" });
 
     const raw = req.files?.files;
     const uploadedFiles = raw ? (Array.isArray(raw) ? raw : [raw]) as UploadedFile[] : [];
@@ -25,7 +20,6 @@ export class AttachmentController {
 
   async list(req: Request, res: Response) {
     const userId = req.params.id as string;
-    if (!canActOnUser(req, userId)) return res.status(403).json({ error: "Acesso negado" });
 
     const attachments = await attachmentService.listByUser(userId);
     if (!attachments) return res.status(404).json({ error: "Usuário não encontrado" });
@@ -35,7 +29,6 @@ export class AttachmentController {
   async remove(req: Request, res: Response) {
     const userId = req.params.id as string;
     const attachmentId = req.params.attachmentId as string;
-    if (!canActOnUser(req, userId)) return res.status(403).json({ error: "Acesso negado" });
 
     const result = await attachmentService.remove(userId, attachmentId);
     if (result === "not_found") return res.status(404).json({ error: "Anexo não encontrado" });

@@ -4,10 +4,10 @@ import { RepositoryFactory } from "../repositories/factory";
 import type { IUserRepository } from "../repositories/interfaces";
 
 export class AuthService {
-  constructor(private userRepo: IUserRepository) {}
+  constructor(private userRepository: IUserRepository) {}
 
   async login(email: string, password: string): Promise<string | null> {
-    const user = await this.userRepo.findByEmail(email);
+    const user = await this.userRepository.findByEmail(email);
     if (!user || !(await bcrypt.compare(password, user.password))) return null;
 
     return jwt.sign(

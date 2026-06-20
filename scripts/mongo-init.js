@@ -12,6 +12,6 @@ if (!adminExists) {
     name: "admin",
     email: "admin@spsgroup.com.br",
     type: "admin",
-    password: "$2b$10$L91RXxJ4mifFjcLJjK/veO52EF.hvX9bwK/cLsZ4wUjElnf.hmmOK",
+    password: "$2b$10$L91RXxJ4mifFjcLJjK/veO52EF.hvX9bwK/cLsZ4wUjElnf.hmmOK", // 1234
   });
 }

@@ -39,7 +39,7 @@ export class UserService {
 
   async list(): Promise<UserWithPhotoAndCount[]> {
     const users = await this.userRepo.findAll();
-    return Promise.all(
+    const data = await Promise.all(
       users.map(async (u) => {
         const [withPhoto, attachmentCount] = await Promise.all([
           this.withPhoto(u),
@@ -48,6 +48,8 @@ export class UserService {
         return { ...withPhoto, attachmentCount };
       }),
     );
+
+    return data;
   }
 
   async getById(id: string): Promise<UserWithPhotoAndAttachments | null> {

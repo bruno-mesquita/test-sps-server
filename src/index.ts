@@ -8,6 +8,7 @@ async function main() {
   await getDb();
   app.listen(port, () => {
     console.log(`Server is running on http://localhost:${port}`);
+    console.log(`Docs is running on http://localhost:${port}/docs`);
   });
 }
 

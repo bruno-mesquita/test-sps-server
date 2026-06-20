@@ -1,11 +1,12 @@
-import { Request, Response } from "express";
+import type { Request, Response } from "express";
 import type { UploadedFile } from "express-fileupload";
 import { createUserSchema, updateUserSchema } from "../schemas";
 import { userService } from "../services/userService";
 
 export class UserController {
   async list(req: Request, res: Response) {
-    res.json(await userService.list());
+    const output = await userService.list();
+    return res.json(output);
   }
 
   async getById(req: Request, res: Response) {

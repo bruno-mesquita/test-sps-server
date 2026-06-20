@@ -1,5 +1,5 @@
 import { Router } from "express";
-import auth from "../middleware/auth";
+import auth, { selfOrAdmin } from "../middleware/auth";
 import { attachmentController } from "../controllers/AttachmentController";
 
 const router = Router();
@@ -46,7 +46,7 @@ const router = Router();
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.post("/users/:id/attachments", auth, (req, res) => attachmentController.upload(req, res));
+router.post("/users/:id/attachments", auth, selfOrAdmin, (req, res) => attachmentController.upload(req, res));
 
 /**
  * @swagger
@@ -78,7 +78,7 @@ router.post("/users/:id/attachments", auth, (req, res) => attachmentController.u
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.get("/users/:id/attachments", auth, (req, res) => attachmentController.list(req, res));
+router.get("/users/:id/attachments", auth, selfOrAdmin, (req, res) => attachmentController.list(req, res));
 
 /**
  * @swagger
@@ -115,7 +115,7 @@ router.get("/users/:id/attachments", auth, (req, res) => attachmentController.li
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-router.delete("/users/:id/attachments/:attachmentId", auth, (req, res) =>
+router.delete("/users/:id/attachments/:attachmentId", auth, selfOrAdmin, (req, res) =>
   attachmentController.remove(req, res),
 );
 

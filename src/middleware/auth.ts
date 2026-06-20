@@ -36,4 +36,21 @@ export const adminAuth = (
   });
 };
 
+export const selfOrAdmin = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): void => {
+  const userId = req.params.id;
+  if (!userId) {
+    res.status(400).json({ error: "ID do usuário não fornecido" });
+    return;
+  }
+  if (req.user!.id !== userId && req.user!.type !== "admin") {
+    res.status(403).json({ error: "Acesso negado" });
+    return;
+  }
+  next();
+};
+
 export default auth;
