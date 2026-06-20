@@ -1,7 +1,7 @@
 import "dotenv/config";
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { UserRepository } from "../repositories/UserRepository";
-import { AttachmentRepository } from "../repositories/attachmentRepository";
+import { InMemoryUserRepository } from "../repositories/InMemory/InMemoryUserRepository";
+import { InMemoryAttachmentRepository } from "../repositories/InMemory/InMemoryAttachmentRepository";
 import { UserService } from "../services/userService";
 import { storageService } from "../services/storageService";
 import type { IPhotoRepository } from "../repositories/interfaces";
@@ -30,13 +30,13 @@ const mockPhotoService: IPhotoService = {
   }),
 };
 
-let userRepo: UserRepository;
+let userRepo: InMemoryUserRepository;
 let userService: UserService;
 let adminId: string;
 
 beforeEach(async () => {
-  userRepo = new UserRepository();
-  userService = new UserService(userRepo, new AttachmentRepository(), mockPhotoRepo, mockPhotoService);
+  userRepo = new InMemoryUserRepository();
+  userService = new UserService(userRepo, new InMemoryAttachmentRepository(), mockPhotoRepo, mockPhotoService);
   const admin = await userRepo.findByEmail("admin@spsgroup.com.br");
   adminId = admin!.id;
 });

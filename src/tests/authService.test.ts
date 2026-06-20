@@ -1,12 +1,12 @@
 import "dotenv/config";
 import { describe, it, expect, beforeEach } from "vitest";
-import { UserRepository } from "../repositories/UserRepository";
+import { InMemoryUserRepository } from "../repositories/InMemory/InMemoryUserRepository";
 import { AuthService } from "../services/authService";
 
 let authService: AuthService;
 
 beforeEach(() => {
-  authService = new AuthService(new UserRepository());
+  authService = new AuthService(new InMemoryUserRepository());
 });
 
 describe("AuthService.login", () => {

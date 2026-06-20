@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
-import type { User } from "../types";
-import type { IUserRepository } from "./interfaces";
+import type { User } from "../../types";
+import type { IUserRepository } from "../interfaces";
 
 type CreateInput = Omit<User, "id">;
 type UpdateInput = Partial<CreateInput>;
@@ -13,7 +13,7 @@ const SEED_USER: User = {
   password: bcrypt.hashSync("1234", 10),
 };
 
-export class UserRepository implements IUserRepository {
+export class InMemoryUserRepository implements IUserRepository {
   users: User[] = [{ ...SEED_USER }];
 
   async reset(): Promise<void> {
@@ -59,4 +59,3 @@ export class UserRepository implements IUserRepository {
     return true;
   }
 }
-

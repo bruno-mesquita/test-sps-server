@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { UserRepository } from "../repositories/UserRepository";
+import { InMemoryUserRepository } from "../repositories/InMemory/InMemoryUserRepository";
 
 const NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000";
 
-let userRepository: UserRepository;
+let userRepository: InMemoryUserRepository;
 
 beforeEach(async () => {
-  userRepository = new UserRepository();
+  userRepository = new InMemoryUserRepository();
 });
 
 async function adminId() {

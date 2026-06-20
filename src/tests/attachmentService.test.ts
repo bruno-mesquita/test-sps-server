@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { UserRepository } from "../repositories/UserRepository";
-import { AttachmentRepository } from "../repositories/attachmentRepository";
+import { InMemoryUserRepository } from "../repositories/InMemory/InMemoryUserRepository";
+import { InMemoryAttachmentRepository } from "../repositories/InMemory/InMemoryAttachmentRepository";
 import { AttachmentService } from "../services/attachmentService";
 import type { StoredFile } from "../services/storageService";
 
@@ -19,10 +19,10 @@ let attachmentService: AttachmentService;
 let adminId: string;
 
 beforeEach(async () => {
-  const userRepo = new UserRepository();
+  const userRepo = new InMemoryUserRepository();
   const admin = await userRepo.findByEmail("admin@spsgroup.com.br");
   adminId = admin!.id;
-  attachmentService = new AttachmentService(userRepo, new AttachmentRepository());
+  attachmentService = new AttachmentService(userRepo, new InMemoryAttachmentRepository());
 });
 
 describe("AttachmentService.createMany", () => {

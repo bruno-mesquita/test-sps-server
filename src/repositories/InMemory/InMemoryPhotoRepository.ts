@@ -1,9 +1,9 @@
-import type { Photo } from "../types";
-import type { IPhotoRepository } from "./interfaces";
+import type { Photo } from "../../types";
+import type { IPhotoRepository } from "../interfaces";
 
 type CreateInput = Omit<Photo, "id">;
 
-export class PhotoRepository implements IPhotoRepository {
+export class InMemoryPhotoRepository implements IPhotoRepository {
   photos: Photo[] = [];
 
   async createPhoto(data: CreateInput) {
@@ -20,4 +20,3 @@ export class PhotoRepository implements IPhotoRepository {
     this.photos = [];
   }
 }
-

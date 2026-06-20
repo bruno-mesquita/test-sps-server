@@ -1,17 +1,17 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { AttachmentRepository } from "../repositories/attachmentRepository";
+import { InMemoryAttachmentRepository } from "../repositories/InMemory/InMemoryAttachmentRepository";
 
 const USER_ID = "user-test-1";
 const OTHER_USER_ID = "user-test-2";
 const NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000";
 
-let attachmentRepository: AttachmentRepository;
+let attachmentRepository: InMemoryAttachmentRepository;
 
 beforeEach(() => {
-  attachmentRepository = new AttachmentRepository();
+  attachmentRepository = new InMemoryAttachmentRepository();
 });
 
-const BASE: Parameters<AttachmentRepository["createAttachment"]>[0] = {
+const BASE: Parameters<InMemoryAttachmentRepository["createAttachment"]>[0] = {
   userId: USER_ID,
   filename: "file.pdf",
   originalName: "documento.pdf",

@@ -1,9 +1,9 @@
-import type { Attachment } from "../types";
-import type { IAttachmentRepository } from "./interfaces";
+import type { Attachment } from "../../types";
+import type { IAttachmentRepository } from "../interfaces";
 
 type CreateInput = Omit<Attachment, "id" | "createdAt">;
 
-export class AttachmentRepository implements IAttachmentRepository {
+export class InMemoryAttachmentRepository implements IAttachmentRepository {
   attachments: Attachment[] = [];
 
   async createAttachment(data: CreateInput) {
@@ -39,4 +39,3 @@ export class AttachmentRepository implements IAttachmentRepository {
     this.attachments = [];
   }
 }
-
