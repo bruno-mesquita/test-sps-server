@@ -24,10 +24,5 @@ export class RepositoryFactory {
     return photoRepository;
   }
 
-  static async seed(): Promise<void> {
-    if (process.env.REPO_TYPE === "mongo") {
-      await new MongoUserRepository().seed();
-    }
-  }
 }
 

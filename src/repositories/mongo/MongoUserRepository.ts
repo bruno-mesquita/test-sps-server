@@ -1,4 +1,3 @@
-import bcrypt from "bcrypt";
 import type { User } from "../../types";
 import type { IUserRepository } from "../interfaces";
 import { getDb } from "./db";
@@ -11,20 +10,6 @@ function strip(doc: unknown): User {
 }
 
 export class MongoUserRepository implements IUserRepository {
-  async seed(): Promise<void> {
-    const db = await getDb();
-    const exists = await db.collection(COLLECTION).findOne({ email: "admin@spsgroup.com.br" });
-    if (!exists) {
-      await db.collection(COLLECTION).insertOne({
-        id: crypto.randomUUID(),
-        name: "admin",
-        email: "admin@spsgroup.com.br",
-        type: "admin",
-        password: bcrypt.hashSync("1234", 10),
-      });
-    }
-  }
-
   async findAll(): Promise<User[]> {
     const db = await getDb();
     const docs = await db.collection(COLLECTION).find({}).toArray();
