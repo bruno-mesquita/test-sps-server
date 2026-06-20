@@ -32,9 +32,9 @@ export class RepositoryFactory {
   }
 
   static reset(): void {
-    _userRepository = undefined;
-    _attachmentRepository = undefined;
-    _photoRepository = undefined;
+    _userRepository?.reset();
+    _attachmentRepository?.reset();
+    _photoRepository?.reset();
   }
 }
 

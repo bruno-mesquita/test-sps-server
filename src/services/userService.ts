@@ -128,9 +128,9 @@ export class UserService {
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
     const user = await this.userRepo.update(id, {
-      name,
-      email,
-      type,
+      ...(name !== undefined && { name }),
+      ...(email !== undefined && { email }),
+      ...(type !== undefined && { type }),
       ...(hashedPassword !== undefined && { password: hashedPassword }),
       ...(photoId !== undefined && { photoId }),
     });
