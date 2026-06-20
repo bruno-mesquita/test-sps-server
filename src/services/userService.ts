@@ -1,4 +1,6 @@
 import bcrypt from "bcrypt";
+import fs from "fs";
+import path from "path";
 import type { UploadedFile } from "express-fileupload";
 import { RepositoryFactory } from "../repositories/factory";
 import type { IUserRepository, IAttachmentRepository, IPhotoRepository } from "../repositories/interfaces";
@@ -14,7 +16,7 @@ type UserWithPhoto = SafeUser & { originalUrl: string | null; previewUrl: string
 type UserWithPhotoAndCount = UserWithPhoto & { attachmentCount: number };
 type UserWithPhotoAndAttachments = UserWithPhoto & { attachments: Attachment[] };
 type UpdateResult =
-  | { ok: true; user: UserWithPhoto }
+  | { ok: true; user: UserWithPhotoAndAttachments }
   | { ok: false; reason: "not_found" | "conflict" };
 
 export class UserService {
@@ -113,11 +115,24 @@ export class UserService {
       type,
       password,
       file,
-    }: Partial<Omit<User, "id">> & { file?: UploadedFile },
+      attachments,
+      removeAttachmentIds,
+    }: Partial<Omit<User, "id">> & { file?: UploadedFile; attachments?: UploadedFile[]; removeAttachmentIds?: string[] },
   ): Promise<UpdateResult> {
     if (email) {
       const existing = await this.userRepo.findByEmail(email);
       if (existing && existing.id !== id) return { ok: false, reason: "conflict" };
+    }
+
+    if (removeAttachmentIds && removeAttachmentIds.length > 0) {
+      for (const attachmentId of removeAttachmentIds) {
+        const attachment = await this.attachmentRepo.findById(attachmentId);
+        if (attachment && attachment.userId === id) {
+          const filePath = path.resolve("uploads", attachment.filename);
+          fs.unlink(filePath, () => {});
+          await this.attachmentRepo.removeAttachment(attachmentId);
+        }
+      }
     }
 
     let photoId: string | undefined;
@@ -137,7 +152,29 @@ export class UserService {
       ...(photoId !== undefined && { photoId }),
     });
     if (!user) return { ok: false, reason: "not_found" };
-    return { ok: true, user: await this.withPhoto(user) };
+
+    const port = process.env.PORT ?? 3000;
+    if (attachments && attachments.length > 0) {
+      const storedFiles = await storageService.saveMany(attachments);
+      await Promise.all(
+        storedFiles.map((f) =>
+          this.attachmentRepo.createAttachment({
+            userId: id,
+            filename: f.filename,
+            originalName: f.originalName,
+            mimetype: f.mimetype,
+            size: f.size,
+            url: `http://localhost:${port}/uploads/${f.filename}`,
+          }),
+        ),
+      );
+    }
+
+    const [withPhoto, attachmentRecords] = await Promise.all([
+      this.withPhoto(user),
+      this.attachmentRepo.findByUserId(id),
+    ]);
+    return { ok: true, user: { ...withPhoto, attachments: attachmentRecords } };
   }
 
   async delete(id: string): Promise<boolean> {

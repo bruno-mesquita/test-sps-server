@@ -144,6 +144,14 @@ router.post("/users", adminAuth, (req, res) => userController.create(req, res));
  *                   photo:
  *                     type: string
  *                     format: binary
+ *                   attachments:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                       format: binary
+ *                   removeAttachmentIds:
+ *                     type: string
+ *                     description: JSON array of attachment IDs to delete, e.g. ["id1","id2"]
  *     responses:
  *       200:
  *         description: User updated

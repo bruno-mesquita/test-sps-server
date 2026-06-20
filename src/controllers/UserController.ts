@@ -41,7 +41,26 @@ export class UserController {
     const raw = req.files?.photo;
     const uploadedFile = raw ? (Array.isArray(raw) ? raw[0] : raw) as UploadedFile : undefined;
 
-    const result = await userService.update(id, { ...parsed.data, file: uploadedFile });
+    const rawAttachments = req.files?.attachments;
+    const uploadedAttachments = rawAttachments
+      ? (Array.isArray(rawAttachments) ? rawAttachments : [rawAttachments]) as UploadedFile[]
+      : [];
+
+    let removeAttachmentIds: string[] = [];
+    if (req.body.removeAttachmentIds) {
+      try {
+        removeAttachmentIds = JSON.parse(req.body.removeAttachmentIds);
+      } catch {
+        return res.status(400).json({ error: "removeAttachmentIds deve ser um JSON array de IDs" });
+      }
+    }
+
+    const result = await userService.update(id, {
+      ...parsed.data,
+      file: uploadedFile,
+      attachments: uploadedAttachments,
+      removeAttachmentIds,
+    });
     if (!result.ok) {
       const status = result.reason === "conflict" ? 409 : 404;
       return res.status(status).json({

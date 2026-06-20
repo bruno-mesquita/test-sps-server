@@ -224,6 +224,100 @@ describe("PUT /users/:id", () => {
     const res = await request(app).put(`/users/${adminId}`).send({ name: "X" });
     expect(res.status).toBe(401);
   });
+
+  it("atualiza usuário com attachments via multipart", async () => {
+    const token = await getToken();
+    const created = await request(app)
+      .post("/users")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Com Anexo", email: "anexo-update@test.com", type: "user", password: "abc" });
+
+    const res = await request(app)
+      .put(`/users/${created.body.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .field("name", "Atualizado Com Anexo")
+      .attach("attachments", Buffer.from("conteudo1"), "doc1.txt")
+      .attach("attachments", Buffer.from("conteudo2"), "doc2.txt");
+    expect(res.status).toBe(200);
+    expect(res.body.name).toBe("Atualizado Com Anexo");
+    expect(res.body.attachments).toHaveLength(2);
+    expect(res.body.attachments[0]).toHaveProperty("id");
+    expect(res.body.attachments[0].userId).toBe(created.body.id);
+  });
+
+  it("atualiza usuário removendo attachments via removeAttachmentIds", async () => {
+    const token = await getToken();
+    const created = await request(app)
+      .post("/users")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Remover Anexo", email: "remove-anexo@test.com", type: "user", password: "abc" });
+
+    const withAttach = await request(app)
+      .put(`/users/${created.body.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .field("name", "Temp")
+      .attach("attachments", Buffer.from("para-remover"), "remover.txt");
+    expect(withAttach.status).toBe(200);
+    expect(withAttach.body.attachments).toHaveLength(1);
+    const attachId = withAttach.body.attachments[0].id;
+
+    const res = await request(app)
+      .put(`/users/${created.body.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .field("removeAttachmentIds", JSON.stringify([attachId]));
+    expect(res.status).toBe(200);
+    expect(res.body.attachments).toHaveLength(0);
+  });
+
+  it("adiciona e remove attachments em uma mesma requisição", async () => {
+    const token = await getToken();
+    const created = await request(app)
+      .post("/users")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "AddRem Anexo", email: "addrem-anexo@test.com", type: "user", password: "abc" });
+
+    const withAttach = await request(app)
+      .put(`/users/${created.body.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .field("name", "Temp")
+      .attach("attachments", Buffer.from("vai-sair"), "sair.txt");
+    expect(withAttach.status).toBe(200);
+    expect(withAttach.body.attachments).toHaveLength(1);
+    const oldId = withAttach.body.attachments[0].id;
+
+    const res = await request(app)
+      .put(`/users/${created.body.id}`)
+      .set("Authorization", `Bearer ${token}`)
+      .field("removeAttachmentIds", JSON.stringify([oldId]))
+      .attach("attachments", Buffer.from("vai-entrar"), "entrar.txt");
+    expect(res.status).toBe(200);
+    expect(res.body.attachments).toHaveLength(1);
+    expect(res.body.attachments[0].id).not.toBe(oldId);
+  });
+
+  it("retorna 400 quando removeAttachmentIds não é um JSON válido", async () => {
+    const token = await getToken();
+    const res = await request(app)
+      .put(`/users/${adminId}`)
+      .set("Authorization", `Bearer ${token}`)
+      .field("removeAttachmentIds", "nao-e-um-json");
+    expect(res.status).toBe(400);
+  });
+
+  it("retorna 403 para usuário não-admin", async () => {
+    const token = await getToken();
+    await request(app)
+      .post("/users")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ name: "Comum", email: "comum-put@test.com", type: "user", password: "abc" });
+
+    const userToken = await getToken({ email: "comum-put@test.com", password: "abc" });
+    const res = await request(app)
+      .put(`/users/${adminId}`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ name: "Hack" });
+    expect(res.status).toBe(403);
+  });
 });
 
 // ---------------------------------------------------------------------------
