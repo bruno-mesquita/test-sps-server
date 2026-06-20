@@ -1,7 +1,7 @@
 import sharp from "sharp";
 import path from "path";
 import fs from "fs/promises";
-import { photoRepository } from "../repositories/photoRepository";
+import { RepositoryFactory } from "../repositories/factory";
 import type { IPhotoRepository } from "../repositories/interfaces";
 import type { IPhotoService } from "./interfaces";
 import type { StoredFile } from "./storageService";
@@ -38,4 +38,4 @@ export class PhotoService implements IPhotoService {
   }
 }
 
-export const photoService = new PhotoService(photoRepository);
+export const photoService = new PhotoService(RepositoryFactory.createPhotoRepository());

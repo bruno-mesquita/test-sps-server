@@ -1,11 +1,17 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { attachmentRepository } from "../repositories/attachmentRepository";
+import { AttachmentRepository } from "../repositories/attachmentRepository";
 
 const USER_ID = "user-test-1";
 const OTHER_USER_ID = "user-test-2";
 const NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000";
 
-const BASE: Parameters<typeof attachmentRepository.createAttachment>[0] = {
+let attachmentRepository: AttachmentRepository;
+
+beforeEach(() => {
+  attachmentRepository = new AttachmentRepository();
+});
+
+const BASE: Parameters<AttachmentRepository["createAttachment"]>[0] = {
   userId: USER_ID,
   filename: "file.pdf",
   originalName: "documento.pdf",
@@ -13,10 +19,6 @@ const BASE: Parameters<typeof attachmentRepository.createAttachment>[0] = {
   size: 1024,
   url: "http://localhost:3000/uploads/file.pdf",
 };
-
-beforeEach(() => {
-  attachmentRepository.reset();
-});
 
 describe("AttachmentRepository.createAttachment", () => {
   it("cria attachment com id UUID e createdAt", async () => {

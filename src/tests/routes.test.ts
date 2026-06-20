@@ -1,8 +1,7 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import request from "supertest";
 import app from "../app";
-import * as repo from "../repositories/UserRepository";
-import * as attachmentRepo from "../repositories/attachmentRepository";
+import { RepositoryFactory } from "../repositories/factory";
 
 const ADMIN = { email: "admin@spsgroup.com.br", password: "1234" };
 
@@ -19,8 +18,7 @@ function decodeId(token: string): string {
 let adminId: string;
 
 beforeEach(async () => {
-  repo.userRepository.reset();
-  attachmentRepo.attachmentRepository.reset();
+  RepositoryFactory.reset();
   const token = await getToken();
   adminId = decodeId(token);
 });

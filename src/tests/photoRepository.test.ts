@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { photoRepository } from "../repositories/photoRepository";
+import { PhotoRepository } from "../repositories/photoRepository";
 
 const NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000";
 
+let photoRepository: PhotoRepository;
+
 beforeEach(() => {
-  photoRepository.reset();
+  photoRepository = new PhotoRepository();
 });
 
 describe("PhotoRepository.createPhoto", () => {

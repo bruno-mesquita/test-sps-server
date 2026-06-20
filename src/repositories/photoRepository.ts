@@ -21,4 +21,3 @@ export class PhotoRepository implements IPhotoRepository {
   }
 }
 
-export const photoRepository = new PhotoRepository();

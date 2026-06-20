@@ -40,4 +40,3 @@ export class AttachmentRepository implements IAttachmentRepository {
   }
 }
 
-export const attachmentRepository = new AttachmentRepository();

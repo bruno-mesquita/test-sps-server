@@ -1,10 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { userRepository } from "../repositories/UserRepository";
+import { UserRepository } from "../repositories/UserRepository";
 
 const NONEXISTENT_ID = "00000000-0000-0000-0000-000000000000";
 
+let userRepository: UserRepository;
+
 beforeEach(async () => {
-  await userRepository.reset();
+  userRepository = new UserRepository();
 });
 
 async function adminId() {
