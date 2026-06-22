@@ -1,5 +1,6 @@
 import path from "path";
 import crypto from "crypto";
+import fs from "fs/promises";
 import type { UploadedFile } from "express-fileupload";
 
 export interface StoredFile {
@@ -41,6 +42,10 @@ export class StorageService {
 
   async saveMany(files: UploadedFile[], options: StorageOptions = {}): Promise<StoredFile[]> {
     return Promise.all(files.map((f) => this.save(f, options)));
+  }
+
+  async remove(filePath: string): Promise<void> {
+    await fs.unlink(path.resolve(filePath));
   }
 }
 

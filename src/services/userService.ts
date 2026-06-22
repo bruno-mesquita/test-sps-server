@@ -1,5 +1,4 @@
 import bcrypt from "bcrypt";
-import fs from "fs";
 import path from "path";
 import type { UploadedFile } from "express-fileupload";
 import { RepositoryFactory } from "../repositories/factory";
@@ -21,8 +20,8 @@ type UpdateResult =
 
 export class UserService {
   constructor(
-    private userRepo: IUserRepository,
-    private attachmentRepo: IAttachmentRepository,
+    private userRepository: IUserRepository,
+    private attachmentRepository: IAttachmentRepository,
     private photoRepo: IPhotoRepository,
     private photoSvc: IPhotoService,
   ) {}
@@ -40,12 +39,12 @@ export class UserService {
   }
 
   async list(): Promise<UserWithPhotoAndCount[]> {
-    const users = await this.userRepo.findAll();
+    const users = await this.userRepository.findAll();
     const data = await Promise.all(
       users.map(async (u) => {
         const [withPhoto, attachmentCount] = await Promise.all([
           this.withPhoto(u),
-          this.attachmentRepo.getCountByUserId(u.id),
+          this.attachmentRepository.getCountByUserId(u.id),
         ]);
         return { ...withPhoto, attachmentCount };
       }),
@@ -55,11 +54,11 @@ export class UserService {
   }
 
   async getById(id: string): Promise<UserWithPhotoAndAttachments | null> {
-    const user = await this.userRepo.findById(id);
+    const user = await this.userRepository.findById(id);
     if (!user) return null;
     const [withPhoto, attachments] = await Promise.all([
       this.withPhoto(user),
-      this.attachmentRepo.findByUserId(id),
+      this.attachmentRepository.findByUserId(id),
     ]);
     return { ...withPhoto, attachments };
   }
@@ -72,7 +71,7 @@ export class UserService {
     file,
     attachments,
   }: Omit<User, "id"> & { file?: UploadedFile; attachments?: UploadedFile[] }): Promise<UserWithPhotoAndAttachments | null> {
-    const existing = await this.userRepo.findByEmail(email);
+    const existing = await this.userRepository.findByEmail(email);
     if (existing) return null;
 
     let photoId: string | undefined;
@@ -83,7 +82,7 @@ export class UserService {
     }
 
     const hashed = await bcrypt.hash(password, 10);
-    const user = await this.userRepo.create({ name, email, type, password: hashed, photoId });
+    const user = await this.userRepository.create({ name, email, type, password: hashed, photoId });
 
     const port = process.env.PORT ?? 3000;
     let attachmentRecords: Attachment[] = [];
@@ -91,7 +90,7 @@ export class UserService {
       const storedFiles = await storageService.saveMany(attachments);
       attachmentRecords = await Promise.all(
         storedFiles.map((f) =>
-          this.attachmentRepo.createAttachment({
+          this.attachmentRepository.createAttachment({
             userId: user.id,
             filename: f.filename,
             originalName: f.originalName,
@@ -120,17 +119,16 @@ export class UserService {
     }: Partial<Omit<User, "id">> & { file?: UploadedFile; attachments?: UploadedFile[]; removeAttachmentIds?: string[] },
   ): Promise<UpdateResult> {
     if (email) {
-      const existing = await this.userRepo.findByEmail(email);
+      const existing = await this.userRepository.findByEmail(email);
       if (existing && existing.id !== id) return { ok: false, reason: "conflict" };
     }
 
     if (removeAttachmentIds && removeAttachmentIds.length > 0) {
       for (const attachmentId of removeAttachmentIds) {
-        const attachment = await this.attachmentRepo.findById(attachmentId);
+        const attachment = await this.attachmentRepository.findById(attachmentId);
         if (attachment && attachment.userId === id) {
-          const filePath = path.resolve("uploads", attachment.filename);
-          fs.unlink(filePath, () => {});
-          await this.attachmentRepo.removeAttachment(attachmentId);
+          await storageService.remove(`uploads/${attachment.filename}`);
+          await this.attachmentRepository.removeAttachment(attachmentId);
         }
       }
     }
@@ -144,7 +142,7 @@ export class UserService {
 
     const hashedPassword = password ? await bcrypt.hash(password, 10) : undefined;
 
-    const user = await this.userRepo.update(id, {
+    const user = await this.userRepository.update(id, {
       ...(name !== undefined && { name }),
       ...(email !== undefined && { email }),
       ...(type !== undefined && { type }),
@@ -158,7 +156,7 @@ export class UserService {
       const storedFiles = await storageService.saveMany(attachments);
       await Promise.all(
         storedFiles.map((f) =>
-          this.attachmentRepo.createAttachment({
+          this.attachmentRepository.createAttachment({
             userId: id,
             filename: f.filename,
             originalName: f.originalName,
@@ -172,18 +170,30 @@ export class UserService {
 
     const [withPhoto, attachmentRecords] = await Promise.all([
       this.withPhoto(user),
-      this.attachmentRepo.findByUserId(id),
+      this.attachmentRepository.findByUserId(id),
     ]);
     return { ok: true, user: { ...withPhoto, attachments: attachmentRecords } };
   }
 
   async delete(id: string): Promise<boolean> {
-    return this.userRepo.remove(id);
+    return this.userRepository.remove(id);
   }
 
   async clearPhoto(id: string): Promise<UserWithPhoto | null> {
-    const user = await this.userRepo.clearPhoto(id);
+    const user = await this.userRepository.findById(id);
     if (!user) return null;
+
+    if (user.photoId) {
+      const photo = await this.photoRepo.findPhotoById(user.photoId);
+      if (photo) {
+        const originalName = path.basename(photo.originalUrl);
+        const previewName = path.basename(photo.previewUrl);
+        await storageService.remove(`uploads/${originalName}`);
+        await storageService.remove(`uploads/${previewName}`);
+      }
+    }
+
+    await this.userRepository.clearPhoto(id);
     return this.withPhoto(user);
   }
 }
